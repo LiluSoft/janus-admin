@@ -1,5 +1,5 @@
 /**
- * Janus Session
+ * Janus Session Container
  *
  * Janus session can contain several different plugin handles at the same time, meaning you can start
  * several different WebRTC sessions with the same or different plugins for the same user using the same Janus session.

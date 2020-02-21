@@ -1,8 +1,9 @@
 import { JanusSession } from "./JanusSession";
 
 /**
- * Plugin Handle
+ * Plugin Handle Container
  *
+ * Hold handle id, session and related plugin
  * @export
  * @class PluginHandle
  */
