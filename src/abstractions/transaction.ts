@@ -2,6 +2,14 @@ import * as crypto from 'crypto';
 
 const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
+/**
+ * Transaction Generator
+ * Used to generate transaction ids for matching responses with requests
+ * You must instantiate a new Transaction instance to get a fresh transaction id
+ *
+ * @export
+ * @class Transaction
+ */
 export class Transaction {
 	private _id: string;
 	constructor() {

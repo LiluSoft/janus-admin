@@ -1,9 +1,14 @@
 {
-    "extends": "tslint:recommended",
+    "extends": [
+        "tslint:recommended",
+        "tslint-no-unused-expression-chai"
+    ],
     "rules": {
         "no-console": [
             false
         ],
+        "semicolon":true,
+        "quotemark":true,
         "variable-name": false,
         "radix": false,
         "object-literal-sort-keys": false,
@@ -22,12 +27,6 @@
         "no-namespace": [
             false
         ],
-        "no-bitwise": false,
-        "no-unused-expression-chai": true
-    },
-    
-    "rulesDirectory": [
-        "node_modules/tslint-no-unused-expression-chai",
-        "tslint-no-unused-expression-chai"
-    ]
+        "no-bitwise": false
+    }
 }

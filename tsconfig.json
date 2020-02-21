@@ -5,17 +5,19 @@
         ],
         "outDir": "dist",
         "moduleResolution": "node",
-        "module": "commonjs", 
+        "module": "commonjs",
         "removeComments": false,
         "sourceMap": true,
         "esModuleInterop": true,
-        "allowSyntheticDefaultImports":true,
+        "allowSyntheticDefaultImports": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "noImplicitAny": true,
         "declaration": true,
-        "target":"es2017",
-        "lib": ["es2017"],  
+        "target": "es2017",
+        "lib": [
+            "es2017"
+        ],
         // "lib": [
         //     "es2015",
         //     "dom"
@@ -27,5 +29,17 @@
     "include": [
         "src/**/*",
         "test/**/*"
-    ]
+    ],
+    "typedocOptions": {
+        "mode": "file",
+        "out": "docs/html",
+        "excludePrivate": true,
+        "externalPattern": "**/node_modules",
+        "toc": [
+            "JanusAdmin",
+            "IEventClient",
+            "ITransport"
+        ],
+        "theme":"docs/theme"
+    }
 }

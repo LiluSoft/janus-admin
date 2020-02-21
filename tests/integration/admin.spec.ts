@@ -4,22 +4,22 @@ import chaiSubset from "chai-subset";
 import "mocha";
 chai.use(chaiSubset);
 
-import { WebSocketTransport } from "../../src/transports/WebSocketTransport";
+import { WebSocketTransport } from "../../src";
 
-import { JanusAdmin } from "../../src/admin/JanusAdmin";
-import { ITransport } from "../../src/transports/ITransport";
-import { Transaction } from "../../src/abstractions/transaction";
-import { JanusClient } from "../../src/plugins/JanusClient";
+import { JanusAdmin } from "../../src";
+import { ITransport } from "../../src";
+import { Transaction } from "../../src";
+import { JanusClient } from "../../src";
 import { VideoRoomPlugin } from "../../src";
-import { IListRequest } from "../../src/plugins/videoroom/models/IListRequest";
-import { IListResponse } from "../../src/plugins/videoroom/models/IListResponse";
-import { MQTTEventClient } from "../../src/events/MQTTEventClient";
-import { IMQTTEVHRequest } from "../../src/events/IMQTTEVHRequest";
-import { EventClientTransport } from "../../src/transports/EventClientTransport";
+import { IListRequest } from "../../src";
+import { IListResponse } from "../../src";
+import { MQTTEventClient } from "../../src";
+import { IMQTTEVHRequest } from "../../src";
+import { EventClientTransport } from "../../src";
 import { waitfor } from "../timing";
 import dgram from "dgram";
-import { AMQPEventClient } from "../../src/events/AMQPEventClient";
-import { HTTPTransport } from "../../src/transports/HTTPTransport";
+import { AMQPEventClient } from "../../src";
+import { HTTPTransport } from "../../src";
 
 const transports:
 	{
@@ -30,7 +30,7 @@ const transports:
 		{
 			name: "WebSocket",
 			adminTransport: () => {
-				return new WebSocketTransport('ws://192.168.99.100:7188', 'janus-admin-protocol');
+				return new WebSocketTransport("ws://192.168.99.100:7188", "janus-admin-protocol");
 			}
 		},
 		{
@@ -60,14 +60,14 @@ for (const transport of transports) {
 		beforeEach(async () => {
 			adminTransport = transport.adminTransport(); // new WebSocketTransport('ws://192.168.99.100:7188', 'janus-admin-protocol');
 			expect(await adminTransport.waitForReady()).to.be.true;
-		})
+		});
 		afterEach(async () => {
 			await adminTransport.dispose();
-		})
+		});
 		it("should ping", async () => {
 			const admin = new JanusAdmin(adminTransport, "janusoverlord");
 
-			const ping_response = await admin.ping()
+			const ping_response = await admin.ping();
 
 			expect(ping_response).to.eq("pong");
 		});
@@ -96,7 +96,7 @@ for (const transport of transports) {
 			const admin = new JanusAdmin(adminTransport, "janusoverlord");
 
 			const sessions = await admin.list_sessions();
-			expect(sessions).to.be.an('array'); // of numbers
+			expect(sessions).to.be.an("array"); // of numbers
 		});
 
 		it("should set session_timeout", async () => {
@@ -424,12 +424,12 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport('ws://192.168.99.100:8188', 'janus-protocol');
+			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
 			const janusClient = new JanusClient(clientTransport);
 			janusClient.setToken(random_token);
 
-			const session = await janusClient.CreateSession()
+			const session = await janusClient.CreateSession();
 
 			let oneMoreSession = await admin.list_sessions();
 			expect(oneMoreSession.length).to.eq(sessions.length + 1);
@@ -450,7 +450,7 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport('ws://192.168.99.100:8188', 'janus-protocol');
+			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
 			const janusClient = new JanusClient(clientTransport);
 			janusClient.setToken(random_token);
@@ -475,7 +475,7 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport('ws://192.168.99.100:8188', 'janus-protocol');
+			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
 			const janusClient = new JanusClient(clientTransport);
 			janusClient.setToken(random_token);
@@ -483,7 +483,7 @@ for (const transport of transports) {
 			const videoPlugin = await VideoRoomPlugin.attach(janusClient, session);
 
 			const handle_info = await admin.handle_info(session, videoPlugin.handle, false);
-			expect(handle_info.session_id).to.be.a('number');
+			expect(handle_info.session_id).to.be.a("number");
 
 			clientTransport.dispose();
 		});
@@ -496,7 +496,7 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport('ws://192.168.99.100:8188', 'janus-protocol');
+			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
 			const janusClient = new JanusClient(clientTransport);
 			janusClient.setToken(random_token);
@@ -522,7 +522,7 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport('ws://192.168.99.100:8188', 'janus-protocol');
+			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
 			const janusClient = new JanusClient(clientTransport);
 			janusClient.setToken(random_token);
@@ -559,7 +559,7 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport('ws://192.168.99.100:8188', 'janus-protocol');
+			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
 			const janusClient = new JanusClient(clientTransport);
 			janusClient.setToken(random_token);
@@ -580,7 +580,7 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport('ws://192.168.99.100:8188', 'janus-protocol');
+			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
 			const janusClient = new JanusClient(clientTransport);
 			janusClient.setToken(random_token);
@@ -662,7 +662,7 @@ for (const transport of transports) {
 		});
 
 		it("should test stun", async () => {
-			const server = dgram.createSocket('udp4');
+			const server = dgram.createSocket("udp4");
 			server.bind(1234);
 
 			const admin = new JanusAdmin(adminTransport, "janusoverlord");
@@ -677,5 +677,5 @@ for (const transport of transports) {
 		}).timeout(10000);
 
 
-	})
+	});
 }

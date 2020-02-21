@@ -4,14 +4,26 @@ import { IResponse } from "../transports/IResponse";
 
 import { IRequestWithToken } from "../transports/IRequestWithToken";
 
-import { PluginHandle } from "../abstractions/Handle";
+import { PluginHandle } from "../abstractions/PluginHandle";
 import { JanusSession } from "../abstractions/JanusSession";
 import * as models from "./models";
 
+/**
+ * Janus Admin API
+ *
+ * @export
+ * @class JanusAdmin
+ */
 export class JanusAdmin {
 	private transport: ITransport;
 	private _admin_secret: string;
 
+	/**
+	 * Creates an instance of JanusAdmin.
+	 * @param {ITransport} transport which transport to use. i.e. WebSocket, HTTP or EventClientTranport
+	 * @param {string} admin_secret admin secret needed for some or all the APIs
+	 * @memberof JanusAdmin
+	 */
 	constructor(transport: ITransport, admin_secret: string) {
 		this.transport = transport;
 		this._admin_secret = admin_secret;
@@ -20,6 +32,12 @@ export class JanusAdmin {
 		}
 	}
 
+	/**
+	 * Retrieve the admin secret used to initialize this instance
+	 *
+	 * @readonly
+	 * @memberof JanusAdmin
+	 */
 	public get admin_secret() {
 		return this._admin_secret;
 	}
@@ -37,7 +55,8 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * a simple ping/pong mechanism for the Admin API, that returns a pong back that the client can use as a healthcheck or to measure the protocol round-trip time; together
+	 * a simple ping/pong mechanism for the Admin API, that returns a pong back that the client can use as a
+	 * healthcheck or to measure the protocol round-trip time
 	 */
 	public async ping() {
 		const req: IRequest = {
@@ -49,7 +68,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 *  returns the current value for the settings that can be modified at runtime via the Admin API (see below);
+	 *  returns the current value for the settings that can be modified at runtime via the Admin API (see below)
 	 */
 	public async get_status() {
 		const req: IRequest = {
@@ -57,18 +76,19 @@ export class JanusAdmin {
 			admin_secret: this._admin_secret,
 		};
 
-		// var session = await this.transport.CreateSession();
-
 		const response = await this.transport.request(req);
 		return (response as any).status as models.IServerStatusResponse;
-		// return response as IServerInfoResponse;
 	}
 
 
 
 
 	/**
-	 * change the session timeout value in Janus on the fly;
+	 * change the session timeout value in Janus on the fly
+	 *
+	 * @param {number} timeout session timeout in seconds
+	 * @returns
+	 * @memberof JanusAdmin
 	 */
 	public async set_session_timeout(timeout: number) {
 		const req: models.ISessionTimeoutRequest = {
@@ -82,7 +102,11 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * change the log level in Janus on the fly;
+	 * change the log level in Janus on the fly
+	 *
+	 * @param {number} level 0-7 where 0 is no log and 7 is debug log
+	 * @returns
+	 * @memberof JanusAdmin
 	 */
 	public async set_log_level(level: number) {
 		const req: models.ISetLogLevelRequest = {
@@ -96,7 +120,8 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * selectively enable/disable a live debugging of the locks in Janus on the fly (useful if you're experiencing deadlocks and want to investigate them);
+	 * selectively enable/disable a live debugging of the locks in Janus on the fly
+	 * (useful if you're experiencing deadlocks and want to investigate them)
 	 */
 	public async set_locking_debug(debug: boolean) {
 		const req: models.IDebugRequest = {
@@ -109,7 +134,8 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * selectively enable/disable a live debugging of the reference counters in Janus on the fly (useful if you're experiencing memory leaks in the Janus structures and want to investigate them);
+	 * selectively enable/disable a live debugging of the reference counters in Janus
+	 * on the fly (useful if you're experiencing memory leaks in the Janus structures and want to investigate them)
 	 * @param debug
 	 */
 	public async set_refcount_debug(debug: boolean) {
@@ -123,7 +149,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * selectively enable/disable libnice debugging;
+	 * selectively enable/disable libnice debugging
 	 */
 	public async set_libnice_debug(debug: boolean) {
 		const req: models.IDebugRequest = {
@@ -136,7 +162,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * selectively enable/disable adding a timestamp to all log lines Janus writes on the console and/or to file;
+	 * selectively enable/disable adding a timestamp to all log lines Janus writes on the console and/or to file
 	 */
 	public async set_log_timestamps(timestamps: boolean) {
 		const req: models.ILogTimestampsRequest = {
@@ -149,7 +175,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * selectively enable/disable using colors in all log lines Janus writes on the console and/or to file;
+	 * selectively enable/disable using colors in all log lines Janus writes on the console and/or to file
 	 */
 	public async set_log_colors(colors: boolean) {
 		const req: models.ILogColorsRequest = {
@@ -162,7 +188,11 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * change the value of the min NACK queue window;
+	 * change the value of the min NACK queue window
+	 *
+	 * @param {number} min_nack_queue minimum NACK queue in ms
+	 * @returns
+	 * @memberof JanusAdmin
 	 */
 	public async set_min_nack_queue(min_nack_queue: number) {
 		const req: models.IMinNackQueueRequest = {
@@ -175,7 +205,11 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * change the value of the no-media timer value on the fly;
+	 * change the value of the no-media timer value on the fly
+	 *
+	 * @param {number} no_media_timer no-media timer in seconds
+	 * @returns
+	 * @memberof JanusAdmin
 	 */
 	public async set_no_media_timer(no_media_timer: number) {
 		const req: models.INoMediaTimerRequest = {
@@ -188,9 +222,9 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * change the value of the slowlink-threshold property.
+	 * change the value of the slowlink-threshold property which is the number of lost packets that trigger slow link
 	 *
-	 * @param slowlink_threshold
+	 * @param {number} slowlink_threshold number of packets to trigger slowlink
 	 */
 	public async set_slowlink_threshold(slowlink_threshold: number) {
 		const req: models.ISlowLinkThresholdRequest = {
@@ -203,7 +237,12 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * add a valid token (only available if you enabled the Stored token based authentication mechanism);
+	 * add a valid token (only available if you enabled the Stored token based authentication mechanism)
+	 *
+	 * @param {string} token token to add
+	 * @param {string[]} plugins which plugins to enable for that token
+	 * @returns
+	 * @memberof JanusAdmin
 	 */
 	public async add_token(token: string, plugins?: string[]) {
 		const req: IRequestWithToken = {
@@ -221,7 +260,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * give a token access to a plugin (only available if you enabled the Stored token based authentication mechanism);
+	 * give a token access to a plugin (only available if you enabled the Stored token based authentication mechanism)
 	 */
 	public async allow_token(token: string, plugins: string[]) {
 		const req: IRequestWithToken = {
@@ -239,7 +278,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * remove a token access from a plugin (only available if you enabled the Stored token based authentication mechanism);
+	 * remove a token access from a plugin (only available if you enabled the Stored token based authentication mechanism)
 	 */
 	public async disallow_token(token: string, plugins: string[]) {
 		const req: IRequestWithToken = {
@@ -257,7 +296,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * list the existing tokens (only available if you enabled the Stored token based authentication mechanism);
+	 * list the existing tokens (only available if you enabled the Stored token based authentication mechanism)
 	 */
 	public async list_tokens() {
 		const req: IRequestWithToken = {
@@ -270,7 +309,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * remove a token (only available if you enabled the Stored token based authentication mechanism).
+	 * remove a token (only available if you enabled the Stored token based authentication mechanism)
 	 */
 	public async remove_token(token: string) {
 		const req: IRequestWithToken = {
@@ -287,7 +326,7 @@ export class JanusAdmin {
 
 	/**
 	 * configure whether Janus should accept new incoming sessions or not; this can be particularly useful whenever,
-	 * e.g., you want to stop accepting new sessions because you're draining this instance;
+	 * e.g., you want to stop accepting new sessions because you're draining this instance
 	 */
 	public async accept_new_sessions(accept: boolean) {
 		const req: models.IAcceptNewSessionsRequest = {
@@ -300,7 +339,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * list all the sessions currently active in Janus (returns an array of session identifiers);
+	 * list all the sessions currently active in Janus (returns an array of session identifiers)
 	 */
 	public async list_sessions() {
 		const req: IRequest = {
@@ -314,7 +353,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * destroy a specific session; this behaves exactly as the destroy request does in the Janus API.
+	 * destroy a specific session; this behaves exactly as the destroy request does in the Janus API
 	 * @param session
 	 */
 	public async destroy_session(session: number) {
@@ -330,7 +369,7 @@ export class JanusAdmin {
 
 
 	/**
-	 * list all the ICE handles currently active in a Janus session (returns an array of handle identifiers);
+	 * list all the ICE handles currently active in a Janus session (returns an array of handle identifiers)
 	 */
 	public async list_handles(session: JanusSession) {
 		const req: IRequest = {
@@ -344,7 +383,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * list all the available info on a specific ICE handle;
+	 * list all the available info on a specific ICE handle
 	 */
 	public async handle_info(session: JanusSession, handle: PluginHandle, plugin_only: boolean) {
 		const req: models.IHandleInfoRequest = {
@@ -360,7 +399,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * start dumping incoming and outgoing RTP/RTCP packets of a handle to a pcap file (e.g., for ex-post analysis via Wireshark);
+	 * start dumping incoming and outgoing RTP/RTCP packets of a handle to a pcap file (e.g., for ex-post analysis via Wireshark)
 	 */
 	public async start_pcap(handle: PluginHandle, folder: string, filename: string, truncate: number) {
 		const req: models.IPcapRequest = {
@@ -378,7 +417,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * stop the pcap dump;
+	 * stop the pcap dump
 	 */
 	public async stop_pcap(handle: PluginHandle) {
 		const req: IRequest = {
@@ -392,7 +431,7 @@ export class JanusAdmin {
 		return response.janus === "success";
 	}
 	/**
-	 * start dumping incoming and outgoing RTP/RTCP packets of a handle to a text2pcap file (e.g., for ex-post analysis via Wireshark);
+	 * start dumping incoming and outgoing RTP/RTCP packets of a handle to a text2pcap file (e.g., for ex-post analysis via Wireshark)
 	 */
 	public async start_text2pcap(handle: PluginHandle, folder: string, filename: string, truncate: number) {
 		const req: models.IPcapRequest = {
@@ -410,7 +449,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 *  stop the text2pcap dump;
+	 *  stop the text2pcap dump
 	 */
 	public async stop_text2pcap(handle: PluginHandle) {
 		const req: IRequest = {
@@ -426,7 +465,7 @@ export class JanusAdmin {
 
 	/**
 	 * send a synchronous request to a plugin and return a response; implemented by most plugins to
-	 * facilitate and streamline the management of plugin resources (e.g., creating rooms in a conference plugin);
+	 * facilitate and streamline the management of plugin resources (e.g., creating rooms in a conference plugin)
 	 */
 	public async message_plugin<TResponse>(plugin: string, request: any) {
 		const req: models.IMessagePluginRequest = {
@@ -441,7 +480,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * hangups the PeerConnection associated with a specific handle; this behaves exactly as the hangup request does in the Janus API.
+	 * hangups the PeerConnection associated with a specific handle; this behaves exactly as the hangup request does in the Janus API
 	 */
 	public async hangup_webrtc(handle: PluginHandle) {
 		const req: IRequest = {
@@ -456,7 +495,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * detached a specific handle; this behaves exactly as the detach request does in the Janus API.
+	 * detached a specific handle; this behaves exactly as the detach request does in the Janus API
 	 */
 	public async detach_handle(handle: PluginHandle) {
 		const req: IRequest = {
@@ -472,7 +511,7 @@ export class JanusAdmin {
 
 
 	/**
-	 * send a synchronous request to an event handler and return a response; implemented by most event handlers to dynamically configure some of their properties;
+	 * send a synchronous request to an event handler and return a response; implemented by most event handlers to dynamically configure some of their properties
 	 */
 	public async query_eventhandler<TRequest, TResponse>(handler: string, request: TRequest) {
 		const req: models.IQueryEventHandlerRequest<TRequest> = {
@@ -487,7 +526,9 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * push a custom "external" event to notify via event handlers; this can be useful whenever info from a third-party application needs to be easily correlated to events originated by Janus, or to push information Janus doesn't have available (e.g., a script polling CPU usage regularly).
+	 * push a custom "external" event to notify via event handlers; this can be useful whenever info from a
+	 * third-party application needs to be easily correlated to events originated by Janus, or to push
+	 * information Janus doesn't have available (e.g., a script polling CPU usage regularly)
 	 */
 	public async custom_event<T>(schema: string, data: T) {
 		const req: models.ICustomEventRequest<T> = {
@@ -502,7 +543,8 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * push a custom "external" string to print on the logs; this can be useful whenever info from a third-party application needs to be injected in the Janus logs for whatever reason. The log level can be chosen.
+	 * push a custom "external" string to print on the logs; this can be useful whenever info from a third-party
+	 * application needs to be injected in the Janus logs for whatever reason. The log level can be chosen.
 	 */
 	public async custom_logline(line: string, level: number) {
 		const req: models.ICustomLogLineRequest = {
@@ -517,7 +559,7 @@ export class JanusAdmin {
 	}
 
 	/**
-	 * helper request to evaluate whether this Janus instance can resolve an address via DNS, and how long it takes;
+	 * helper request to evaluate whether this Janus instance can resolve an address via DNS, and how long it takes
 	 */
 	public async resolve_address(address: string) {
 		const req: models.IResolveAddressRequest = {

@@ -1,6 +1,14 @@
-import { Transaction } from "../abstractions/transaction";
+import { Transaction } from "../abstractions/Transaction";
 import { Session } from "inspector";
 
+/**
+ * Deferred Promise
+ * Handles Matching Promises with queued responses while maintaining a stack trace
+ *
+ * @export
+ * @class DeferredPromise
+ * @template T
+ */
 export class DeferredPromise<T>{
 	public promise: Promise<T>;
 	public resolve: (result: T) => void;
@@ -8,18 +16,6 @@ export class DeferredPromise<T>{
 	public transaction: Transaction;
 	public session: Session;
 	public stack: string;
-
-	// constructor(promise : Promise<T>,
-	//      resolve : (result:T)=>void,
-	//      reject : (err:Error)=>void,
-	//      transaction: Transaction,
-	//      session: Session){
-	//          this.promise = promise;
-	//          this.resolve = resolve;
-	//          this.reject = reject;
-	//          this.transaction = transaction;
-	//          this.session = session;
-	//      }
 
 	public static async create<T>(transaction?: Transaction, session?: Session) {
 		const err = new Error();

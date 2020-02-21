@@ -31,7 +31,7 @@ import { IListParticipantsResponse } from "./models/IListParticipantsResponse";
 import { ITransport } from "../../transports/ITransport";
 import { IRequest } from "../../transports/IRequest";
 import { IResponse } from "../../transports/IResponse";
-import { PluginHandle } from "../../abstractions/Handle";
+import { PluginHandle } from "../../abstractions/PluginHandle";
 import { IPluginDataResponse } from "../../abstractions/IPluginDataResponse";
 import { IVideoRoomResponse } from "./models/IVideoRoomResponse";
 import { IVideoRoomError } from "./models/IVideoRoomError";

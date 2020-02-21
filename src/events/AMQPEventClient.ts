@@ -27,7 +27,7 @@ export class AMQPEventClient implements IEventClient {
 	/**
 	 * Creates an instance of AMQPEventClient.
 	 * @param {(string | amqplib.Options.Connect)} url AMQP Connection URL
-	 * @param {*} [socketOptions] Socket Options, i.e. noDelay
+	 * @param {*} socketOptions Socket Options, i.e. noDelay
 	 * @memberof AMQPEventClient
 	 */
 	constructor(url: string | amqplib.Options.Connect, socketOptions?: any) {

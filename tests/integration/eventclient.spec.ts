@@ -2,24 +2,10 @@ import { fail } from "assert";
 import { expect } from "chai";
 import "mocha";
 
-import { WebSocketTransport } from "../../src/transports/WebSocketTransport";
-import { JanusAdmin } from "../../src/admin/JanusAdmin";
-import { server } from "websocket";
-import { ITransport } from "../../src/transports/ITransport";
-import { Transaction } from "../../src/abstractions/transaction";
-import { JanusClient } from "../../src/plugins/JanusClient";
-import { VideoRoomPlugin } from "../../src";
-import { IRequest } from "../../src/transports/IRequest";
-import { IRequestWithBody } from "../../src/transports/IRequestWithBody";
-import { IListRequest } from "../../src/plugins/videoroom/models/IListRequest";
-import { IVideoRoomResponse } from "../../src/plugins/videoroom/models/IVideoRoomResponse";
-import { IListResponse } from "../../src/plugins/videoroom/models/IListResponse";
-import { IPluginDataResponse } from "../../src/abstractions/IPluginDataResponse";
-import { MQTTEventClient } from "../../src/events/MQTTEventClient";
-import { AMQPEventClient } from "../../src/events/AMQPEventClient";
-import { IMQTTEVHRequest } from "../../src/events/IMQTTEVHRequest";
+import { MQTTEventClient } from "../../src";
+import { AMQPEventClient } from "../../src";
 import { waitfor } from "../timing";
-import { IEventClient } from "../../src/events/IEventClient";
+import { IEventClient } from "../../src";
 
 const eventClients: {
 	name: string;
@@ -67,7 +53,7 @@ for (const eventClient of eventClients) {
 			await waitfor(100);
 			console.log(messages);
 
-			expect(messages).to.deep.include(message)
+			expect(messages).to.deep.include(message);
 
 			await publisherClient.dispose();
 			await subscriberClient.dispose();

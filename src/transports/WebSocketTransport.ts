@@ -7,13 +7,19 @@ import { DeferredPromise } from "./DeferredPromise";
 import { JanusError } from "./JanusError";
 import { IResponse } from "./IResponse";
 import { ISessionResponse } from "../abstractions/ISessionResponse";
-import { PluginHandle } from "../abstractions/Handle";
-import { IPluginHandleResponse } from "../abstractions/IHandleResponse";
-import { Transaction } from "../abstractions/transaction";
+import { PluginHandle } from "../abstractions/PluginHandle";
+import { Transaction } from "../abstractions/Transaction";
 import { JanusSession } from "../abstractions/JanusSession";
 
 import bunyan from "bunyan";
 
+/**
+ * WebSocket Transport for Janus API
+ *
+ * @export
+ * @class WebSocketTransport
+ * @extends {ITransport}
+ */
 export class WebSocketTransport extends ITransport {
 	private _logger = bunyan.createLogger({ name: "WebSocketTransport" });
 
@@ -30,10 +36,21 @@ export class WebSocketTransport extends ITransport {
 
 	private globalEmitter = new EventEmitter();
 
+	/**
+	 * True if this transport is pointing to Admin API
+	 *
+	 * @returns {boolean}
+	 */
 	public isAdminEndpoint(): boolean {
 		return (this._janus_protocol === 'janus-admin-protocol');
 	}
 
+	/**
+	 * Creates an instance of WebSocketTransport.
+	 * @param {string} janus_websocket_url Janus API WebSocket URL
+	 * @param {string} janus_protocol Janus Protocol to use, could be 'janus-admin-protocol' or 'janus-protocol'
+	 * @memberof WebSocketTransport
+	 */
 	constructor(janus_websocket_url?: string, janus_protocol?: string) {
 		super();
 
@@ -132,101 +149,15 @@ export class WebSocketTransport extends ITransport {
 
 				// TODO: add timeout to transactions, reject with timeout error
 			});
-
-			// function sendNumber() {
-			//     if (connection.connected) {
-			//         var number = Math.round(Math.random() * 0xFFFFFF);
-			//         connection.sendUTF(number.toString());
-			//         setTimeout(sendNumber, 1000);
-			//     }
-			// }
-			// sendNumber();
 		});
 
 		this._websocket.connect(this._janus_websocket_url, this._janus_protocol);
 
-
-
-		// this._websocket.onclose = () => {
-		//     this._logger.debug("closed");
-		//     this._ready = false;
-		//     this.globalEmitter.emit("closed");
-
-		//     //reject all ready promises
-		//     for (var promise of this._ready_promises) {
-		//         promise.resolve(false);
-		//     }
-		//     this._ready_promises = [];
-
-
-		//     //TODO: reject all active promises
-		// }
-
-		// this._websocket.
-
-		// this._websocket.onerror = (err) => {
-		//      this._logger.error("janus error", err);
-		//     this.globalEmitter.emit("error", err.message);
-
-		//     //reject all ready promises
-		//     for (var promise of this._ready_promises) {
-		//         promise.resolve(false);
-		//     }
-		//     this._ready_promises = [];
-
-		//     //TODO: for each promise, reject and delte
-		// };
-
-		// this._websocket.onopen = () => {
-		//      this._logger.debug("opened");
-		//     this._ready = true;
-		//     this.globalEmitter.emit("ready");
-		//     for (var promise of this._ready_promises) {
-		//         promise.resolve(true);
-		//     }
-		//     this._ready_promises = [];
-		//     //for each promise, resolve and delete
-		// }
-		// this._websocket.onmessage = (message: any) => {
-		//     var data = JSON.parse(message.data);
-
-		//     // this._logger.debug("data", data);
-
-		//     if (!data.transaction) {
-		//         //unknown transaction, treat as global
-		//          this._logger.warn("no transaction data", data);
-		//         return;
-		//     }
-
-		//     var deferredPromise = this._transactions[data.transaction];
-
-		//     if (!deferredPromise) {
-		//         //unknown transaction, dispose
-		//          this._logger.error("unknown transaction", data.transaction);
-		//         return;
-		//     }
-
-		//     if (data.janus == "error") {
-		//         //if error, then reject
-		//         // this._logger.error("error", data);
-		//         deferredPromise.reject(new JanusError(data.error.code, data.error.reason));
-		//         return;
-		//     }else if (data.janus == "timeout"){
-		//         //TODO: notify session timeout
-		//          this._logger.warn("timeout", data);
-		//     }else {
-		//         //if no error, treat as success
-		//         // this._logger.debug("resolving", data);
-		//         deferredPromise.resolve(data)
-		//     }
-
-		//     //cleanup used transaction
-		//     delete this._transactions[data.transaction];
-
-		//     //TODO: add timeout to transactions, reject with timeout error
-		// };
 	}
 
+	/**
+	 * Waits for the Transport to be ready
+	 */
 	public async waitForReady(): Promise<boolean> {
 		if (this._ready) {
 			return true;
@@ -240,6 +171,9 @@ export class WebSocketTransport extends ITransport {
 		// add timeout mechanism
 	}
 
+	/**
+	 * Cleanup, important in order to prevent connection and memory leaks
+	 */
 	public async dispose() {
 		const deferredPromise = await DeferredPromise.create<void>();
 		this._dispose_promises.push(deferredPromise);
@@ -247,18 +181,21 @@ export class WebSocketTransport extends ITransport {
 		this._connection.close();
 		this._websocket.abort();
 
-		// this._websocket.close();
-		// this._websocket.onclose = null;
-		// this._websocket.onerror = null;
-		// this._websocket.onopen = null;
-		// this._websocket.onmessage = null;
 		this._connection = null;
 		this._websocket = null;
 
 		return deferredPromise.promise;
 	}
 
-
+	/**
+	 * Executes a request against Janus API
+	 *
+	 * @template ResponseT response type
+	 * @param {IRequest} req request data
+	 * @param {JanusSession} session Janus Session to use
+	 * @param {PluginHandle} pluginHandle Janus Plugin Handle to use
+	 * @returns {Promise<ResponseT>}
+	 */
 	public async request<ResponseT>(req: IRequest, session?: JanusSession, pluginHandle?: PluginHandle): Promise<ResponseT> {
 		// always add a transaction the request is trackable
 		const transaction = new Transaction();
@@ -280,7 +217,6 @@ export class WebSocketTransport extends ITransport {
 		this._transactions[transaction.getTransactionId()] = deferredPromise;
 
 		this._logger.debug("sending", req);
-		// this._websocket.send(JSON.stringify(req));
 		this._connection.send(JSON.stringify(req));
 
 		return deferredPromise.promise;

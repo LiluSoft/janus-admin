@@ -6,13 +6,13 @@ import { VideoRoomPlugin } from "../../src/plugins/videoroom/plugin";
 
 	// let transport = new HTTPTransport();
 
-	const clientTransport = new WebSocketTransport('ws://192.168.99.100:8188', 'janus-protocol');
-	await clientTransport.waitForReady()
+	const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+	await clientTransport.waitForReady();
 
 	const videoPlugin = await VideoRoomPlugin.attach(clientTransport);
 	let rooms = await videoPlugin.list({
 		request: "list"
-	})
+	});
 
 	this._logger.debug("all", rooms);
 
@@ -29,7 +29,7 @@ import { VideoRoomPlugin } from "../../src/plugins/videoroom/plugin";
 			audiolevel_event: true,
 			audio_active_packets: 50,
 			audio_level_average: 40
-		})
+		});
 
 
 		this._logger.debug("created", createReq.room, createReq.videoroom);

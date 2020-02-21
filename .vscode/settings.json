@@ -2,6 +2,7 @@
     "cSpell.words": [
         "Dror",
         "Gluska",
+        "IMQTTEVH",
         "IRTP",
         "JSEP",
         "REMB",
@@ -14,6 +15,7 @@
         "datachannels",
         "eventhandler",
         "hangingup",
+        "healthcheck",
         "janusoverlord",
         "keepalive",
         "libnice",
@@ -27,15 +29,19 @@
         "plugindata",
         "ptype",
         "pvtid",
+        "quotemark",
         "refcount",
         "resetdecoder",
         "slowlink",
         "substream",
         "twcc",
+        "typedoc",
         "unpublish",
         "videocodec",
         "videoroom",
         "waitfor",
-        "webrtc"
+        "webrtc",
+        "wsclient",
+        "wsconnection"
     ]
 }

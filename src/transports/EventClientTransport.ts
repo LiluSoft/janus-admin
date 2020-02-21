@@ -1,7 +1,7 @@
 import { ITransport } from "./ITransport";
 import { IRequest } from "./IRequest";
 import { JanusSession } from "../abstractions/JanusSession";
-import { PluginHandle } from "../abstractions/Handle";
+import { PluginHandle } from "../abstractions/PluginHandle";
 
 import mqtt from "mqtt";
 import { promises } from "fs";
