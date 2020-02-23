@@ -47,7 +47,6 @@ export class VideoRoomPlugin {
 
 	public static async attach(client: JanusClient, session?: JanusSession): Promise<VideoRoomPlugin> {
 		const logger = bunyan.createLogger({ name: "VideoRoomPlugin" });
-		// let client = new JanusClient(transport);
 
 		if (!session) {
 			session = await client.CreateSession();
@@ -73,12 +72,16 @@ export class VideoRoomPlugin {
 	}
 
 	public async create(req: ICreateRequest): Promise<ICreatedResponse> {
+		this._logger.debug("create", req);
+
 		const listReq: IRequestWithBody<ICreateRequest> = {
 			janus: "message",
 			body: req
 		};
 
-		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ICreatedResponse>>>(listReq, this._session, this._handle)
+		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ICreatedResponse>>>(listReq, this._session, this._handle);
+		console.log(list);
+
 		if ((list.plugindata.data as any).error) {
 			const error = (list.plugindata.data as any as IVideoRoomError);
 			throw new VideoRoomError(error.error_code, error.error);
@@ -86,6 +89,8 @@ export class VideoRoomPlugin {
 		this._logger.debug(list);
 		return list.plugindata.data;
 	}
+
+
 	public edit(req: IEditRequest): Promise<IEditedResponse> { throw new Error("not implemented"); }
 	public destroy(req: IDestroyRequest): Promise<IDestroyedResponse> { throw new Error("not implemented"); }
 	public exists(req: IExistsRequest): Promise<IExistsResponse> { throw new Error("not implemented"); }
@@ -97,7 +102,7 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListResponse>>>(listReq, this._session, this._handle)
+		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListResponse>>>(listReq, this._session, this._handle);
 		this._logger.debug(list);
 		return list.plugindata.data;
 	}
@@ -137,4 +142,14 @@ export class VideoRoomPlugin {
 	public onPublish(cb: (room: number, publishers: IPublisher[]) => void) {
 		// register in event emitter
 	}
+
+	public join(){
+
+	}
+
+	public joinandconfigure(){
+
+	}
+
+
 }

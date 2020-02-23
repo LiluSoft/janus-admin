@@ -1,7 +1,7 @@
 import { ITransport } from "./ITransport";
 import { IRequest } from "./IRequest";
 
-import { client as wsclient, connection as wsconnection } from 'websocket';
+import { client as wsclient, connection as wsconnection } from "websocket";
 import { EventEmitter } from "events";
 import { DeferredPromise } from "./DeferredPromise";
 import { JanusError } from "./JanusError";
@@ -42,7 +42,7 @@ export class WebSocketTransport extends ITransport {
 	 * @returns {boolean}
 	 */
 	public isAdminEndpoint(): boolean {
-		return (this._janus_protocol === 'janus-admin-protocol');
+		return (this._janus_protocol === "janus-admin-protocol");
 	}
 
 	/**
@@ -54,19 +54,19 @@ export class WebSocketTransport extends ITransport {
 	constructor(janus_websocket_url?: string, janus_protocol?: string) {
 		super();
 
-		this._janus_websocket_url = janus_websocket_url || 'ws://localhost:8188';
-		this._janus_protocol = janus_protocol || 'janus-protocol';
+		this._janus_websocket_url = janus_websocket_url || "ws://localhost:8188";
+		this._janus_protocol = janus_protocol || "janus-protocol";
 
 		this._websocket = new wsclient();
 		// this._websocket = new wsclient(this._janus_websocket_url, this._janus_protocol);
 
 
-		this._websocket.on('connectFailed', (error) => {
-			this._logger.error('Connect Error: ' + error.toString());
+		this._websocket.on("connectFailed", (error) => {
+			this._logger.error("Connect Error: " + error.toString());
 		});
 
-		this._websocket.on('connect', (connection) => {
-			this._logger.debug('WebSocket Client Connected');
+		this._websocket.on("connect", (connection) => {
+			this._logger.debug("WebSocket Client Connected");
 			this._connection = connection;
 			this._ready = true;
 			this.globalEmitter.emit("ready");
@@ -76,7 +76,7 @@ export class WebSocketTransport extends ITransport {
 			this._ready_promises = [];
 			// for each promise, resolve and delete
 
-			connection.on('error', (error) => {
+			connection.on("error", (error) => {
 				this._logger.error("Connection Error: " + error.toString());
 				this.globalEmitter.emit("error", error);
 
@@ -88,8 +88,8 @@ export class WebSocketTransport extends ITransport {
 
 				// TODO: for each promise, reject and delte
 			});
-			connection.on('close', () => {
-				this._logger.debug('Connection Closed');
+			connection.on("close", () => {
+				this._logger.debug("Connection Closed");
 				this._ready = false;
 				this.globalEmitter.emit("closed");
 
@@ -107,8 +107,8 @@ export class WebSocketTransport extends ITransport {
 
 				// TODO: reject all active promises
 			});
-			connection.on('message', (message) => {
-				if (message.type === 'utf8') {
+			connection.on("message", (message) => {
+				if (message.type === "utf8") {
 					this._logger.debug("Received: '" + message.utf8Data + "'");
 				}
 
@@ -141,7 +141,7 @@ export class WebSocketTransport extends ITransport {
 				} else {
 					// if no error, treat as success
 					this._logger.debug("resolving", data);
-					deferredPromise.resolve(data)
+					deferredPromise.resolve(data);
 				}
 
 				// cleanup used transaction
@@ -178,8 +178,12 @@ export class WebSocketTransport extends ITransport {
 		const deferredPromise = await DeferredPromise.create<void>();
 		this._dispose_promises.push(deferredPromise);
 
-		this._connection.close();
-		this._websocket.abort();
+		if (this._connection) {
+			this._connection.close();
+		}
+		if (this._websocket) {
+			this._websocket.abort();
+		}
 
 		this._connection = null;
 		this._websocket = null;

@@ -16,7 +16,7 @@ export class MQTTEventClient implements IEventClient {
 		return Promise.resolve();
 	}
 
-	public async subscribe<T>(topic: string, callback: (message: T) => void) {
+	public async subscribe<T>(topic: string, callback: (message: T) => void, createQueueIfNotFound?: boolean) {
 		this._logger.debug("Subscribing to", topic);
 		return new Promise<void>((resolve, reject) => {
 			this._client.subscribe(topic, (err: Error, granted: mqtt.ISubscriptionGrant[]) => {
@@ -55,11 +55,11 @@ export class MQTTEventClient implements IEventClient {
 
 	private _registerMessageHandler() {
 		this._logger.debug("Registering Message Handler");
-		this._client.on('message', (topic, message) => {
+		this._client.on("message", (topic, message) => {
 			this._logger.debug("Message", topic, message);
 			this._processMessage(topic, message.toString());
 		});
-		this._client.on('error', (err) => {
+		this._client.on("error", (err) => {
 			this._eventEmitter.emit("error", err);
 		});
 	}
@@ -78,7 +78,7 @@ export class MQTTEventClient implements IEventClient {
 		this._logger.debug("Starting", brokerUrl);
 		this._client = mqtt.connect(brokerUrl, opts);
 		this._readyPromise = new Promise<boolean>((resolve, reject) => {
-			this._client.on('connect', () => {
+			this._client.on("connect", () => {
 				this._logger.debug("Connected");
 				resolve(true);
 			});

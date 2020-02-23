@@ -38,7 +38,7 @@ export class AMQPEventClient implements IEventClient {
 				this._logger.debug("Connected");
 				this._client = conn;
 				resolve(true);
-			})
+			});
 		});
 	}
 
@@ -53,10 +53,14 @@ export class AMQPEventClient implements IEventClient {
 	 * @returns
 	 * @memberof AMQPEventClient
 	 */
-	public async subscribe<T>(queue: string, callback: (message: T) => void) {
+	public async subscribe<T>(queue: string, callback: (message: T) => void, createQueueIfNotFound?: boolean) {
 		this._logger.debug("Subscribing to", queue);
 		return new Promise<void>(async (resolve, reject) => {
-			// let assertResult = await this._subscribeChannel.assertQueue(queue,{durable:true});
+			if (createQueueIfNotFound) {
+				const assertResult = await this._subscribeChannel.assertQueue(queue);
+				this._logger.debug("queue", assertResult);
+			}
+			//
 			const consumeResult = await this._subscribeChannel.consume(queue, (msg) => {
 				if (msg !== null) {
 					this._processMessage(queue, msg.content.toString());
@@ -108,11 +112,11 @@ export class AMQPEventClient implements IEventClient {
 		this._publishChannel = await this._client.createChannel();
 
 
-		this._client.on('message', (topic, message) => {
+		this._client.on("message", (topic, message) => {
 			this._logger.debug("Message", topic, message);
 			this._processMessage(topic, message.toString());
 		});
-		this._client.on('error', (err) => {
+		this._client.on("error", (err) => {
 			this._eventEmitter.emit("error", err);
 		});
 	}

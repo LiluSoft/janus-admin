@@ -28,7 +28,7 @@ export interface IEventClient {
 	 * @returns {Promise<void>}
 	 * @memberof IEventClient
 	 */
-	subscribe<T>(topic: string, callback: (message: T) => void): Promise<void>;
+	subscribe<T>(topic: string, callback: (message: T) => void, createQueueIfNotFound?: boolean): Promise<void>;
 
 	/**
 	 * Publishes a message to a topic/queue
@@ -48,5 +48,5 @@ export interface IEventClient {
 	 * @returns {Promise<void>}
 	 * @memberof IEventClient
 	 */
-	onError(errorHandler: (err: Error) => void): Promise<void>
+	onError(errorHandler: (err: Error) => void): Promise<void>;
 }
