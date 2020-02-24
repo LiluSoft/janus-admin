@@ -1,6 +1,6 @@
 
 export interface IRTPForwardRequest {
-	"request": "rtp_forward",
+	"request": "rtp_forward";
 	/**
 	 * unique numeric ID of the room the publisher is in
 	 */
@@ -80,5 +80,5 @@ export interface IRTPForwardRequest {
 	/**
 	 * key to use as crypto (base64 encoded key as in SDES); optional
 	 */
-	"srtp_crypto"?: string
+	"srtp_crypto"?: string;
 }

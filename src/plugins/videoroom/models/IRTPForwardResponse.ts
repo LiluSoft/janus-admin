@@ -1,7 +1,7 @@
 import { IRTPStream } from "./IRTPStream";
 
 export interface IRTPForwardResponse {
-	"videoroom": "rtp_forward",
+	"videoroom": "rtp_forward";
 	/**
 	 * unique numeric ID, same as request
 	 */

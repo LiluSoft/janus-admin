@@ -1,7 +1,15 @@
 
+/**
+ * publishers are those participant handles that are able (although may
+ * choose not to, more on this later) publish media in the room, and as
+ * such become feeds that you can subscribe to.
+ *
+ * @export
+ * @interface IJoinPublisherRequest
+ */
 export interface IJoinPublisherRequest {
-	"request": "join",
-	"ptype": "publisher",
+	"request": "join";
+	"ptype": "publisher";
 	/**
 	 * unique ID of the room to join
 	 */

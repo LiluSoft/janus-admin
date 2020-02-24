@@ -1,5 +1,5 @@
 export interface ISwitchRequest {
-	"request": "switch",
+	"request": "switch";
 	/**
 	 * unique ID of the new publisher to switch to; mandatory
 	 */

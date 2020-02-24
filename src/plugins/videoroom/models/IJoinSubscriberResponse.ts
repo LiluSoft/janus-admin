@@ -1,5 +1,5 @@
 export interface IAttachedResponse {
-	"videoroom": "attached",
+	"videoroom": "attached";
 	/**
 	 * room ID
 	 */

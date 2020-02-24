@@ -1,7 +1,7 @@
 import { ISuccessResponse } from "./ISuccessResponse";
 
 export interface IAllowedResponse extends ISuccessResponse {
-	"videoroom": "success",
+	"videoroom": "success";
 	/**
 	 * unique numeric ID
 	 */

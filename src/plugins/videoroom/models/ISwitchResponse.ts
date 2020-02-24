@@ -1,6 +1,6 @@
 export interface ISwitchResponse {
-	"videoroom": "event",
-	"switched": "ok",
+	"videoroom": "event";
+	"switched": "ok";
 	/**
 	 * room ID
 	 */

@@ -32,6 +32,6 @@ export class DeferredPromise<T>{
 				resolveDeferred(promise);
 			});
 
-		})
+		});
 	}
 }

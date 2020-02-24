@@ -1,5 +1,5 @@
 export interface IListForwardersRequest {
-	"request": "listforwarders",
+	"request": "listforwarders";
 	/**
 	 * unique numeric ID of the room
 	 */

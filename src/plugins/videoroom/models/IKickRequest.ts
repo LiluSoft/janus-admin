@@ -1,9 +1,12 @@
+/**
+ * kick participants using the kick request
+ */
 export interface IKickRequest {
-	"request": "kick",
+	"request": "kick";
 	/**
 	 * room secret, mandatory if configured
 	 */
-	"secret": string;
+	"secret"?: string;
 	/**
 	 * unique numeric ID of the room
 	 */

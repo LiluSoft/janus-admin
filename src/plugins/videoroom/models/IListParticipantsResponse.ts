@@ -2,7 +2,7 @@ import { IParticipant } from "./IParticipant";
 
 // A successful request will produce a list of participants in a participants response:
 export interface IListParticipantsResponse {
-	"videoroom": "participants",
+	"videoroom": "participants";
 	/**
 	 * unique numeric ID of the room
 	 */

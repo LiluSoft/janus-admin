@@ -1,7 +1,7 @@
 export interface IPluginDataResponse<T> {
-	janus: 'success',
+	janus: "success";
 	session_id: number;
 	transaction: string;
 	sender: number;
-	plugindata: T
+	plugindata: T;
 }

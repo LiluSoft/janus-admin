@@ -71,13 +71,15 @@ export class EventClientTransport extends ITransport {
 			this._logger.error("error", data);
 			deferredPromise.reject(new JanusError(data.error.code, data.error.reason, deferredPromise.stack));
 			return;
+		} else if (data.janus === "ack") {
+			this._logger.debug("ack received, waiting for async response", data);
+			return;
 		} else if (data.janus === "timeout") {
-			// TODO: notify session timeout
 			this._logger.error("timeout", data);
 		} else {
 			// if no error, treat as success
 			this._logger.debug("resolving", data);
-			deferredPromise.resolve(data)
+			deferredPromise.resolve(data);
 		}
 
 		// cleanup used transaction
@@ -110,7 +112,7 @@ export class EventClientTransport extends ITransport {
 
 		this._logger.debug("sending", req);
 		// this._websocket.send(JSON.stringify(req));
-		this._client.publish(this.publish_topic, req)
+		this._client.publish(this.publish_topic, req);
 		// this._connection.send(JSON.stringify(req));
 
 		return deferredPromise.promise;
@@ -132,7 +134,7 @@ export class EventClientTransport extends ITransport {
 			this._ready_promises = [];
 
 			// TODO: for each promise, reject and delete
-		})
+		});
 		return success;
 	}
 

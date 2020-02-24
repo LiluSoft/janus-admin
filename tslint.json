@@ -7,9 +7,18 @@
         "no-console": [
             false
         ],
-        "semicolon":true,
-        "quotemark":true,
-        "variable-name": false,
+        "semicolon": true,
+        "quotemark": true,
+        "variable-name": {
+            "options": [
+                "ban-keywords",
+                "check-format",
+                "allow-leading-underscore",
+                "allow-trailing-underscore",
+                "require-const-for-all-caps",
+                "allow-snake-case"
+            ]
+        },
         "radix": false,
         "object-literal-sort-keys": false,
         "trailing-comma": [
@@ -23,10 +32,12 @@
             false
         ],
         "no-string-literal": false,
-        "class-name": false,
+        "class-name": true,
         "no-namespace": [
             false
         ],
+        "interface-name": true,
+        "no-shadowed-variable": true,
         "no-bitwise": false
     }
 }

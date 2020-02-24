@@ -35,16 +35,33 @@ import { PluginHandle } from "../../abstractions/PluginHandle";
 import { IPluginDataResponse } from "../../abstractions/IPluginDataResponse";
 import { IVideoRoomResponse } from "./models/IVideoRoomResponse";
 import { IVideoRoomError } from "./models/IVideoRoomError";
-import { VideoRoomError } from "./VideoRoomError";
 import { JanusSession } from "../../abstractions/JanusSession";
 
 import bunyan from "bunyan";
 import { IRequestWithBody } from "../../transports/IRequestWithBody";
 import { JanusClient } from "../JanusClient";
+import { IRequestWithToken } from "../../transports";
+import { ISuccessResponse } from ".";
+import { IEventData } from "../../transports/IEventData";
 
+/**
+ * VideoRoom SFU Plugin
+ *
+ * @export
+ * @class VideoRoomPlugin
+ */
 export class VideoRoomPlugin {
 	private _logger = bunyan.createLogger({ name: "VideoRoomPlugin" });
 
+	/**
+	 * Attach a new VideoRoomPlugin to Janus Client
+	 *
+	 * @static
+	 * @param {JanusClient} client JanusClient to create a video room plugin from
+	 * @param {JanusSession} session optional  Janus Session to use, otherwise create a new session
+	 * @returns {Promise<VideoRoomPlugin>}
+	 * @memberof VideoRoomPlugin
+	 */
 	public static async attach(client: JanusClient, session?: JanusSession): Promise<VideoRoomPlugin> {
 		const logger = bunyan.createLogger({ name: "VideoRoomPlugin" });
 
@@ -54,61 +71,350 @@ export class VideoRoomPlugin {
 		}
 		const handle = await client.CreateHandle(session, "janus.plugin.videoroom");
 
-		return new VideoRoomPlugin(client.transport, client, session, handle);
+		const plugin = new VideoRoomPlugin(client.transport, client, session, handle);
+		client.transport.subscribe_plugin_events(handle.plugin, plugin._handle_event);
+		return plugin;
 	}
 
+	private _handle_event<T>(event: IEventData<T>) {
+		console.log(event);
+	}
+
+	/**
+	 * Cleanup VideoRoomPlugin
+	 */
 	public async dispose() {
 		const destroyedHandle = await this._client.DetachHandle(this._handle);
 		const destroyedSession = await this._client.DestroySession(this._session);
 		this._logger.debug("destroyed", destroyedHandle, destroyedSession);
 	}
 
-	constructor(private _transport: ITransport, private _client: JanusClient, private _session: JanusSession, private _handle: PluginHandle) {
+	/**
+	 * Create a new VideoRoomPlugin
+	 *
+	 * @param _transport transport to use
+	 * @param _client janus client to use
+	 * @param _session janus session to use
+	 * @param _handle  plugin handle to use
+	 */
+	private constructor(private _transport: ITransport, private _client: JanusClient, private _session: JanusSession, private _handle: PluginHandle) {
 
 	}
 
+	/**
+	 * Get Plugin Handle
+	 *
+	 * @readonly
+	 * @memberof VideoRoomPlugin
+	 */
 	public get handle() {
 		return this._handle;
 	}
 
+	/**
+	 * Create a new Video Room
+	 *
+	 * @param req
+	 *
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const create_result = await videoPlugin.create({
+	 * 		request: "create",
+	 * 		room: 1234,
+	 * 		is_private: false
+	 * });
+	 * ```
+	 */
 	public async create(req: ICreateRequest): Promise<ICreatedResponse> {
 		this._logger.debug("create", req);
 
-		const listReq: IRequestWithBody<ICreateRequest> = {
+		const create_request: IRequestWithBody<ICreateRequest> & IRequestWithToken = {
 			janus: "message",
 			body: req
 		};
 
-		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ICreatedResponse>>>(listReq, this._session, this._handle);
-		console.log(list);
-
-		if ((list.plugindata.data as any).error) {
-			const error = (list.plugindata.data as any as IVideoRoomError);
-			throw new VideoRoomError(error.error_code, error.error);
+		if (this._client && this._client._token) {
+			create_request.token = this._client._token;
 		}
-		this._logger.debug(list);
-		return list.plugindata.data;
+
+		const created_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ICreatedResponse>>>(create_request, this._session, this._handle);
+
+		return created_result.plugindata.data;
 	}
 
 
-	public edit(req: IEditRequest): Promise<IEditedResponse> { throw new Error("not implemented"); }
-	public destroy(req: IDestroyRequest): Promise<IDestroyedResponse> { throw new Error("not implemented"); }
-	public exists(req: IExistsRequest): Promise<IExistsResponse> { throw new Error("not implemented"); }
-	public allowed(req: IAllowedRequest): Promise<IAllowedResponse> { throw new Error("not implemented"); }
-	public kick(req: IKickRequest): Promise<boolean> { throw new Error("not implemented"); }
-	public async list(req: IListRequest): Promise<IListResponse> {
-		const listReq: IRequestWithBody<IListRequest> = {
+	/**
+	 * Edit Video Room
+	 *
+	 * @param req
+	 *
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const edit_result = await videoPlugin.edit({
+	 * 		request: "edit",
+	 * 		room: 1234,
+	 * 		new_description: "new description"
+	 * });
+	 * ```
+	 */
+	public async edit(req: IEditRequest): Promise<IEditedResponse> {
+		this._logger.debug("edit", req);
+
+		const edit_request: IRequestWithBody<IEditRequest> & IRequestWithToken = {
 			janus: "message",
 			body: req
 		};
 
-		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListResponse>>>(listReq, this._session, this._handle);
-		this._logger.debug(list);
+		if (this._client && this._client._token) {
+			edit_request.token = this._client._token;
+		}
+
+		const edit_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IEditedResponse>>>(edit_request, this._session, this._handle);
+
+		return edit_result.plugindata.data;
+	}
+
+
+	/**
+	 * Destroy a Video Room
+	 *
+	 * @param {IDestroyRequest} req
+	 * @returns {Promise<IDestroyedResponse>}
+	 * @memberof VideoRoomPlugin
+	 *
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const destroy_result = await videoPlugin.destroy({
+	 * 		request: "destroy",
+	 * 		room: 1234
+	 * });
+	 * ```
+	 */
+	public async destroy(req: IDestroyRequest): Promise<IDestroyedResponse> {
+		this._logger.debug("destroy", req);
+
+		const destroy_request: IRequestWithBody<IDestroyRequest> & IRequestWithToken = {
+			janus: "message",
+			body: req
+		};
+
+		if (this._client && this._client._token) {
+			destroy_request.token = this._client._token;
+		}
+
+		const destroy_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IDestroyedResponse>>>(destroy_request, this._session, this._handle);
+
+		return destroy_result.plugindata.data;
+	}
+
+
+	/**
+	 * Check if a Video Room Exists
+	 *
+	 * @param {IExistsRequest} req
+	 * @returns {Promise<IExistsResponse>}
+	 * @memberof VideoRoomPlugin
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const destroy_result = await videoPlugin.exists({
+	 * 		request: "exists",
+	 * 		room: 1234
+	 * });
+	 * ```
+	 */
+	public async exists(req: IExistsRequest): Promise<IExistsResponse> {
+		this._logger.debug("exists", req);
+
+		const exists_request: IRequestWithBody<IExistsRequest> & IRequestWithToken = {
+			janus: "message",
+			body: req
+		};
+
+		if (this._client && this._client._token) {
+			exists_request.token = this._client._token;
+		}
+
+		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IExistsResponse>>>(exists_request, this._session, this._handle);
+
+		return exists_result.plugindata.data;
+	}
+
+
+	/**
+	 * Sets Permissions on existing room
+	 *
+	 * where action can be enable/disable token checking or add/remove tokens
+	 *
+	 * @param req
+	 *
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const allowed_result = await videoPlugin.allowed({
+	 * 		request: "allowed",
+	 * 		room: 1234,
+	 * 		action: "disable"
+	 * });
+	 * ```
+	 */
+	public async allowed(req: IAllowedRequest): Promise<IAllowedResponse> {
+		this._logger.debug("allowed", req);
+
+		const allowed_request: IRequestWithBody<IAllowedRequest> & IRequestWithToken = {
+			janus: "message",
+			body: req
+		};
+
+		if (this._client && this._client._token) {
+			allowed_request.token = this._client._token;
+		}
+
+		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IAllowedResponse>>>(allowed_request, this._session, this._handle);
+
+		return exists_result.plugindata.data;
+	}
+
+
+	/**
+	 * kick participants using the kick request. Notice that this only kicks the user out of the
+	 * room, but does not prevent them from re-joining: to ban them, you need to first remove
+	 * them from the list of authorized users (see allowed request) and then kick them
+	 *
+	 * @param {IKickRequest} req
+	 * @returns {Promise<ISuccessResponse>}
+	 * @memberof VideoRoomPlugin
+	 *
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const allowed_result = await videoPlugin.kick({
+	 * 		request: "kick",
+	 * 		room: 1234,
+	 * 		id: participant
+	 * });
+	 * ```
+	 */
+	public async kick(req: IKickRequest): Promise<ISuccessResponse> {
+		this._logger.debug("kick", req);
+
+		const allowed_request: IRequestWithBody<IKickRequest> & IRequestWithToken = {
+			janus: "message",
+			body: req
+		};
+
+		if (this._client && this._client._token) {
+			allowed_request.token = this._client._token;
+		}
+
+		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ISuccessResponse>>>(allowed_request, this._session, this._handle);
+
+		return exists_result.plugindata.data;
+	}
+
+	/**
+	 * Get a list of the available rooms (excluded those configured or created as private rooms)
+	 *
+	 * @param {IListRequest} req
+	 * @returns {Promise<IListResponse>}
+	 * @memberof VideoRoomPlugin
+	 *
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const allowed_result = await videoPlugin.list({
+	 * 		request: "list"
+	 * });
+	 * ```
+	 */
+	public async list(req: IListRequest): Promise<IListResponse> {
+		this._logger.debug("list", req);
+
+		const list_request: IRequestWithBody<IListRequest> & IRequestWithToken = {
+			janus: "message",
+			body: req
+		};
+
+		if (this._client && this._client._token) {
+			list_request.token = this._client._token;
+		}
+
+		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListResponse>>>(list_request, this._session, this._handle);
 		return list.plugindata.data;
 	}
-	public listparticipants(req: IListParticipantsRequest): Promise<IListParticipantsResponse> { throw new Error("not implemented"); }
 
-	public join_publisher(req: IJoinPublisherRequest): Promise<IJoinPublisherResponse> { throw new Error("not implemented"); }
+	/**
+	 * Get a list of the participants in a specific room
+	 *
+	 * @param {IListParticipantsRequest} req
+	 * @returns {Promise<IListParticipantsResponse>}
+	 * @memberof VideoRoomPlugin
+	 *
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const allowed_result = await videoPlugin.listparticipants({
+	 * 		request: "listparticipants",
+	 * 		room: 1234
+	 * });
+	 * ```
+	 */
+	public async listparticipants(req: IListParticipantsRequest): Promise<IListParticipantsResponse> {
+		this._logger.debug("listparticipants", req);
+
+		const list_participants: IRequestWithBody<IListParticipantsRequest> & IRequestWithToken = {
+			janus: "message",
+			body: req
+		};
+
+		if (this._client && this._client._token) {
+			list_participants.token = this._client._token;
+		}
+
+		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListParticipantsResponse>>>(list_participants, this._session, this._handle);
+		return list.plugindata.data;
+	}
+
+
+	/**
+	 * publishers are those participant handles that are able (although may choose not to, more on this later)
+	 * publish media in the room, and as such become feeds that you can subscribe to.
+	 *
+	 * @param {IJoinPublisherRequest} req
+	 * @returns {Promise<IJoinPublisherResponse>}
+	 * @memberof VideoRoomPlugin
+	 *
+	 * ```TypeScript
+	 * const janusClient = new JanusClient(...);
+	 * const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+	 * const allowed_result = await videoPlugin.join_publisher({
+	 * 		request: "join",
+	 * 		ptype: "publisher",
+	 * 		room: 1234
+	 * });
+	 * ```
+	 */
+	public async join_publisher(req: IJoinPublisherRequest): Promise<IJoinPublisherResponse> {
+		this._logger.debug("join/publisher", req);
+
+		const list_request: IRequestWithBody<IJoinPublisherRequest> & IRequestWithToken = {
+			janus: "message",
+			body: req
+		};
+
+		if (this._client && this._client._token) {
+			list_request.token = this._client._token;
+		}
+
+		const publisher_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IJoinPublisherResponse>>>(list_request, this._session, this._handle);
+		return publisher_result.plugindata.data;
+	}
+
+
+
 	public publish(req: IPublishRequest): Promise<boolean> { throw new Error("not implemented"); }
 	public unpublish() {
 		// nop
@@ -143,12 +449,12 @@ export class VideoRoomPlugin {
 		// register in event emitter
 	}
 
-	public join(){
-
+	public join() {
+		throw new Error("not implemented");
 	}
 
-	public joinandconfigure(){
-
+	public joinandconfigure() {
+		throw new Error("not implemented");
 	}
 
 

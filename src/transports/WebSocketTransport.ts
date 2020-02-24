@@ -12,6 +12,8 @@ import { Transaction } from "../abstractions/Transaction";
 import { JanusSession } from "../abstractions/JanusSession";
 
 import bunyan from "bunyan";
+import { IEventData } from "./IEventData";
+import { IDetachedEvent } from "./IDetachedEvent";
 
 /**
  * WebSocket Transport for Janus API
@@ -21,7 +23,8 @@ import bunyan from "bunyan";
  * @extends {ITransport}
  */
 export class WebSocketTransport extends ITransport {
-	private _logger = bunyan.createLogger({ name: "WebSocketTransport" });
+	private _logger = bunyan.createLogger({ name: "WebSocketTransport", level: "info" });
+	// private _logger = bunyan.createLogger({ name: "WebSocketTransport", level: "trace" });
 
 	private _janus_websocket_url: string;
 	private _janus_protocol: string;
@@ -86,7 +89,7 @@ export class WebSocketTransport extends ITransport {
 				}
 				this._ready_promises = [];
 
-				// TODO: for each promise, reject and delte
+				// TODO: for each promise, reject and delete
 			});
 			connection.on("close", () => {
 				this._logger.debug("Connection Closed");
@@ -116,9 +119,52 @@ export class WebSocketTransport extends ITransport {
 
 				this._logger.debug("data", data);
 
+				// const x = {
+				// 	"janus": "event",
+				// 	"session_id": 8038049194841240,
+				// 	"transaction": "KfduCkUf8P",
+				// 	"sender": 3312670424758283,
+				// 	"plugindata": {
+				// 		"plugin": "janus.plugin.videoroom",
+				// 		"data": {
+				// 			"videoroom": "joined",
+				// 			"room": 3353824061,
+				// 			"description": "Room 3353824061",
+				// 			"id": 7481918513808437,
+				// 			"private_id": 1828609574,
+				// 			"publishers": []
+				// 		}
+				// 	}
+				// };
+
+				// const xx = {
+				// 	janus: "event",
+				// 	session_id: 8038049194841240,
+				// 	sender: 3312670424758283,
+				// 	plugindata: {
+				// 		plugin: "janus.plugin.videoroom",
+				// 		data: {
+				// 			videoroom: "event",
+				// 			room: 3353824061,
+				// 			leaving: "ok",
+				// 			reason: "kicked"
+				// 		}
+				// 	}
+				// };
+
+
 				if (!data.transaction) {
+					if (data.janus === "event") {
+						this._logger.debug("janus event", data);
+						this.globalEmitter.emit("event", data);
+						return;
+					} else if (data.janus === "detached") {
+						this._logger.debug("janus detached", data);
+						this.globalEmitter.emit("detached", data);
+						return;
+					}
 					// unknown transaction, treat as global
-					this._logger.debug("no transaction data", data);
+					this._logger.warn("no transaction data", data);
 					return;
 				}
 
@@ -134,6 +180,9 @@ export class WebSocketTransport extends ITransport {
 					// if error, then reject
 					this._logger.error("error", data);
 					deferredPromise.reject(new JanusError(data.error.code, data.error.reason, deferredPromise.stack));
+					return;
+				} else if (data.janus === "ack") {
+					this._logger.debug("ack received, waiting for async response", data);
 					return;
 				} else if (data.janus === "timeout") {
 					// TODO: notify session timeout
@@ -153,6 +202,14 @@ export class WebSocketTransport extends ITransport {
 
 		this._websocket.connect(this._janus_websocket_url, this._janus_protocol);
 
+	}
+
+	public subscribe_plugin_events<T>(plugin_name: string, callback: (event: IEventData<T>) => void) {
+		this.globalEmitter.on("event", callback);
+	}
+
+	public subscribe_detached(callback: (event: IDetachedEvent) => void) {
+		this.globalEmitter.on("detached", callback);
 	}
 
 	/**
@@ -175,6 +232,10 @@ export class WebSocketTransport extends ITransport {
 	 * Cleanup, important in order to prevent connection and memory leaks
 	 */
 	public async dispose() {
+		if (this._connection == null) {
+			this._logger.warn("Already Disposed");
+			return;
+		}
 		const deferredPromise = await DeferredPromise.create<void>();
 		this._dispose_promises.push(deferredPromise);
 

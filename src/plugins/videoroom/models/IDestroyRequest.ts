@@ -8,9 +8,9 @@ export interface IDestroyRequest {
 	/**
 	 * room secret, mandatory if configured
 	 */
-	"secret": string;
+	"secret"?: string;
 	/**
 	 * true|false, whether the room should be also removed from the config file, default false
 	 */
-	"permanent": boolean;
+	"permanent"?: boolean;
 }

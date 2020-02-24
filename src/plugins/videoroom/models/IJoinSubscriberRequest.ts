@@ -1,7 +1,7 @@
 
 export interface IJoinSubscriberRequest {
-	"request": "join",
-	"ptype": "subscriber",
+	"request": "join";
+	"ptype": "subscriber";
 	/**
 	 * unique ID of the room to subscribe in
 	 */

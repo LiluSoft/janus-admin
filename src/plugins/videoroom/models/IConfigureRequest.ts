@@ -1,5 +1,5 @@
 export interface IConfigureRequest {
-	"request": "configure",
+	"request": "configure";
 	/**
 	 * true|false, depending on whether or not audio should be relayed; true by default
 	 */

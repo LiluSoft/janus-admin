@@ -1,5 +1,5 @@
 export interface IListHandlesResponse {
-	janus: 'success',
+	janus: "success";
 	transaction: string;
 	handles: number[];
 }

@@ -1,6 +1,6 @@
 
 export interface IListForwardersResponse {
-	"videoroom": "forwarders",
+	"videoroom": "forwarders";
 	/**
 	 * unique numeric ID of the room
 	 */
@@ -44,5 +44,5 @@ export interface IListForwardersResponse {
 				}
 			],
 		}
-	]
+	];
 }

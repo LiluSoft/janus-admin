@@ -1,5 +1,8 @@
+/**
+ * publishing media within a room
+ */
 export interface IPublishRequest {
-	"request": "publish",
+	"request": "publish";
 	/**
 	 * true|false, depending on whether or not audio should be relayed; true by default
 	 */

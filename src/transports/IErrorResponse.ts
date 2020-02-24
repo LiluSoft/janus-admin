@@ -4,5 +4,5 @@ export interface IErrorResponse {
 	error: {
 		code: number;
 		reason: string;
-	}
+	};
 }

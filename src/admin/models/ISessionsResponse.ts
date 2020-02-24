@@ -1,5 +1,5 @@
 export interface ISessionsResponse {
-	janus: 'success',
+	janus: "success";
 	transaction: string;
 	sessions: number[];
 }

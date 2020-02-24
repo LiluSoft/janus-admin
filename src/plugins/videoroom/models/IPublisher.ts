@@ -16,6 +16,10 @@ export interface IPublisher {
 	 */
 	"video_codec": string;
 	/**
+	 * true if the publisher uses simulcast (VP8 and H.264 only)
+	 */
+	"simulcast":boolean;
+	/**
 	 * true|false, whether the publisher is talking or not (only if audio levels are used)
 	 */
 	"talking": boolean;

@@ -1,8 +1,8 @@
 
 // To get a list of the participants in a specific room,
-// instead, you can make use of the listparticipants request, which has to be formatted as follows:
+// instead, you can make use of the listparticipants request
 export interface IListParticipantsRequest {
-	"request": "listparticipants",
+	"request": "listparticipants";
 	/**
 	 * unique numeric ID of the room
 	 */

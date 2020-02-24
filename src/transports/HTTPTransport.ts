@@ -65,7 +65,7 @@ export class HTTPTransport extends ITransport {
 			req.handle_id = pluginHandle.handle_id;
 		}
 
-		return await (await superagent.post(this.url).send(req)).body
+		return await (await superagent.post(this.url).send(req)).body;
 	}
 	/**
 	 * Cleanup

@@ -1,5 +1,5 @@
 export interface IStopRTPForwardRequest {
-	"request": "stop_rtp_forward",
+	"request": "stop_rtp_forward";
 	/**
 	 * unique numeric ID of the room the publisher is in
 	 */

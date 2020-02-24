@@ -1,7 +1,8 @@
 import { IPublisher } from "./IPublisher";
+import { IAttendee } from "./IAttendee";
 
 export interface IJoinPublisherResponse {
-	"videoroom": "joined",
+	"videoroom": "joined";
 	/**
 	 * room ID
 	 */
@@ -21,5 +22,10 @@ export interface IJoinPublisherResponse {
 	/**
 	 * Other active publishers
 	 */
-	"publishers": IPublisher[]
+	"publishers": IPublisher[];
+
+	/**
+	 * attendees
+	 */
+	attendees: IAttendee[];
 }

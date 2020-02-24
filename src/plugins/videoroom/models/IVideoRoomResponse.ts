@@ -1,4 +1,4 @@
 export interface IVideoRoomResponse<T> {
-	plugin: "janus.plugin.videoroom",
-	data: T
+	plugin: "janus.plugin.videoroom";
+	data: T;
 }

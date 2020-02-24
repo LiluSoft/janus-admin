@@ -6,7 +6,7 @@
  * @interface IGenerateRequest
  */
 export interface IGenerateRequest {
-	request: "generate",
+	request: "generate";
 	/**
 	 * opaque string that the user can provide for context; optional
 	 *

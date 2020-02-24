@@ -1,5 +1,5 @@
 export interface ICreatedResponse {
-	"videoroom": "created",
+	"videoroom": "created";
 	/**
 	 * unique numeric ID
 	 */

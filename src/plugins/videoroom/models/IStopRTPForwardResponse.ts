@@ -1,5 +1,5 @@
 export interface IStopRTPForwardResponse {
-	"videoroom": "stop_rtp_forward",
+	"videoroom": "stop_rtp_forward";
 	/**
 	 * unique numeric ID, same as request
 	 */
