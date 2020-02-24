@@ -679,3 +679,25 @@ for (const transport of transports) {
 
 	});
 }
+
+describe("admin", ()=>{
+	it("should throw an error when the transport is not on admin endpoint", ()=>{
+		const transport =  new WebSocketTransport("ws://192.168.99.100:7188", "janus-protocol");
+
+		expect(()=>{
+			const admin = new JanusAdmin(transport,"test");
+		}).throws("Admin endpoint");
+
+		transport.dispose();
+	});
+
+	it("should return the same secret", ()=>{
+		const transport =  new WebSocketTransport("ws://192.168.99.100:7188", "janus-admin-protocol");
+
+		const admin = new JanusAdmin(transport,"test-password");
+
+		expect(admin.admin_secret).to.eq("test-password");
+
+		transport.dispose();
+	});
+});
