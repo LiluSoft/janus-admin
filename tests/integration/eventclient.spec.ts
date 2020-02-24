@@ -43,7 +43,7 @@ for (const eventClient of eventClients) {
 			const messages: any[] = [];
 			const result = await subscriberClient.subscribe(eventClient.subscribeQueueName, (incomingMessage) => {
 				messages.push(incomingMessage);
-			});
+			},true);
 
 			const publisherClient = eventClient.publishClient();
 			await publisherClient.waitForReady();
