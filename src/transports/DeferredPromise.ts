@@ -16,14 +16,16 @@ export class DeferredPromise<T>{
 	public transaction: Transaction;
 	public session: Session;
 	public stack: string;
+	public ignore_ack: boolean;
 
-	public static async create<T>(transaction?: Transaction, session?: Session) {
+	public static async create<T>(transaction?: Transaction, session?: Session, ignore_ack?: boolean) {
 		const err = new Error();
 		// return err.stack;
-		return new Promise<DeferredPromise<T>>((resolveDeferred, rejectDefered) => {
+		return new Promise<DeferredPromise<T>>((resolveDeferred) => {
 
 			const promise = new DeferredPromise<T>();
 			promise.promise = new Promise<T>((resolve, reject) => {
+				promise.ignore_ack = ignore_ack || true;
 				promise.stack = err.stack;
 				promise.resolve = resolve;
 				promise.reject = reject;

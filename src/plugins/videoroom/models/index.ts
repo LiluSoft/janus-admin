@@ -34,3 +34,4 @@ export * from "./ISwitchRequest";
 export * from "./ISwitchResponse";
 export * from "./IVideoRoomError";
 export * from "./IVideoRoomResponse";
+export * from "./IConfigured";

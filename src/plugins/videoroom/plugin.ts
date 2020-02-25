@@ -39,10 +39,11 @@ import { JanusSession } from "../../abstractions/JanusSession";
 
 import bunyan from "bunyan";
 import { IRequestWithBody } from "../../transports/IRequestWithBody";
-import { JanusClient } from "../JanusClient";
+import { JanusClient } from "../../client/JanusClient";
 import { IRequestWithToken } from "../../transports";
 import { ISuccessResponse } from ".";
 import { IEventData } from "../../transports/IEventData";
+import { IConfigured } from "./models";
 
 /**
  * VideoRoom SFU Plugin
@@ -72,7 +73,7 @@ export class VideoRoomPlugin {
 		const handle = await client.CreateHandle(session, "janus.plugin.videoroom");
 
 		const plugin = new VideoRoomPlugin(client.transport, client, session, handle);
-		client.transport.subscribe_plugin_events(handle.plugin, plugin._handle_event);
+		client.transport.subscribe_plugin_events(session, plugin._handle_event);
 		return plugin;
 	}
 
@@ -102,16 +103,6 @@ export class VideoRoomPlugin {
 	}
 
 	/**
-	 * Get Plugin Handle
-	 *
-	 * @readonly
-	 * @memberof VideoRoomPlugin
-	 */
-	public get handle() {
-		return this._handle;
-	}
-
-	/**
 	 * Create a new Video Room
 	 *
 	 * @param req
@@ -134,8 +125,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			create_request.token = this._client._token;
+		if (this._client && this._client.token) {
+			create_request.token = this._client.token;
 		}
 
 		const created_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ICreatedResponse>>>(create_request, this._session, this._handle);
@@ -167,8 +158,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			edit_request.token = this._client._token;
+		if (this._client && this._client.token) {
+			edit_request.token = this._client.token;
 		}
 
 		const edit_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IEditedResponse>>>(edit_request, this._session, this._handle);
@@ -201,8 +192,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			destroy_request.token = this._client._token;
+		if (this._client && this._client.token) {
+			destroy_request.token = this._client.token;
 		}
 
 		const destroy_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IDestroyedResponse>>>(destroy_request, this._session, this._handle);
@@ -234,8 +225,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			exists_request.token = this._client._token;
+		if (this._client && this._client.token) {
+			exists_request.token = this._client.token;
 		}
 
 		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IExistsResponse>>>(exists_request, this._session, this._handle);
@@ -269,8 +260,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			allowed_request.token = this._client._token;
+		if (this._client && this._client.token) {
+			allowed_request.token = this._client.token;
 		}
 
 		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IAllowedResponse>>>(allowed_request, this._session, this._handle);
@@ -306,8 +297,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			allowed_request.token = this._client._token;
+		if (this._client && this._client.token) {
+			allowed_request.token = this._client.token;
 		}
 
 		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ISuccessResponse>>>(allowed_request, this._session, this._handle);
@@ -338,8 +329,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			list_request.token = this._client._token;
+		if (this._client && this._client.token) {
+			list_request.token = this._client.token;
 		}
 
 		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListResponse>>>(list_request, this._session, this._handle);
@@ -370,8 +361,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			list_participants.token = this._client._token;
+		if (this._client && this._client.token) {
+			list_participants.token = this._client.token;
 		}
 
 		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListParticipantsResponse>>>(list_participants, this._session, this._handle);
@@ -405,8 +396,8 @@ export class VideoRoomPlugin {
 			body: req
 		};
 
-		if (this._client && this._client._token) {
-			list_request.token = this._client._token;
+		if (this._client && this._client.token) {
+			list_request.token = this._client.token;
 		}
 
 		const publisher_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IJoinPublisherResponse>>>(list_request, this._session, this._handle);
@@ -415,7 +406,33 @@ export class VideoRoomPlugin {
 
 
 
-	public publish(req: IPublishRequest): Promise<boolean> { throw new Error("not implemented"); }
+	/**
+	 * If you're interested in publishing media within a room, you can do that
+	 * with a publish request. This request MUST be accompanied by a JSEP
+	 * SDP offer to negotiate a new PeerConnection. The plugin will match it
+	 * to the room configuration (e.g., to make sure the codecs you negotiated
+	 * are allowed in the room), and will reply with a JSEP SDP answer to
+	 * close the circle and complete the setup of the PeerConnection. As soon
+	 * as the PeerConnection has been establisher, the publisher will become
+	 * active, and a new active feed other participants can subscribe to.
+	 *
+	 * @param req
+	 */
+	public async publish(req: IPublishRequest): Promise<IConfigured> {
+		this._logger.debug("publish", req);
+
+		const list_request: IRequestWithBody<IPublishRequest> & IRequestWithToken = {
+			janus: "message",
+			body: req
+		};
+
+		if (this._client && this._client.token) {
+			list_request.token = this._client.token;
+		}
+
+		const publish_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IConfigured>>>(list_request, this._session, this._handle);
+		return publish_result.plugindata.data;
+	}
 	public unpublish() {
 		// nop
 	}

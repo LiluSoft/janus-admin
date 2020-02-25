@@ -38,5 +38,5 @@ export interface IPublishRequest {
 	/**
 	 * new display name to use in the room; optional
 	 */
-	"display": string;
+	"display"?: string;
 }

@@ -6,7 +6,7 @@ export interface IRequest {
 	| "allow_token" | "disallow_token" | "list_tokens" | "remove_token" | "accept_new_sessions"
 	| "destroy_session" | "list_handles" | "handle_info" | "start_pcap" | "start_text2pcap"
 	| "stop_pcap" | "stop_text2pcap" | "message_plugin" | "hangup_webrtc" | "detach_handle" | "query_eventhandler"
-	| "custom_event" | "custom_logline" | "resolve_address" | "test_stun";
+	| "custom_event" | "custom_logline" | "resolve_address" | "test_stun" | "trickle" | "hangup" | "claim";
 	transaction?: string;
 	correlation_id?: string;
 	session_id?: number;
