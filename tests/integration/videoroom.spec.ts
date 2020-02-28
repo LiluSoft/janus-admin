@@ -1,12 +1,13 @@
 import { WebSocketTransport } from "../../src/transports/WebSocketTransport";
 import { VideoRoomPlugin } from "../../src/plugins/videoroom/plugin";
-import { JanusClient, ITransport, JanusAdmin, Transaction } from "../../src";
+import { ITransport, JanusAdmin, Transaction } from "../../src";
 import { expect } from "chai";
 import "mocha";
 import { client } from "websocket";
 import { generate_random_number } from "../random";
 import chai from "chai";
 import chaiSubset from "chai-subset";
+import { JanusClient } from "../../src/client/JanusClient";
 chai.use(chaiSubset);
 
 describe("videoroom", () => {
@@ -32,8 +33,8 @@ describe("videoroom", () => {
 		await clientTransport.dispose();
 	});
 	it("should attach plugin", async () => {
-		const janusClient = new JanusClient(clientTransport);
-		janusClient.setToken(clientToken);
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
 
@@ -42,8 +43,8 @@ describe("videoroom", () => {
 	});
 
 	it("should create a room", async () => {
-		const janusClient = new JanusClient(clientTransport);
-		janusClient.setToken(clientToken);
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
 
@@ -67,8 +68,8 @@ describe("videoroom", () => {
 	});
 
 	it("should edit a room", async () => {
-		const janusClient = new JanusClient(clientTransport);
-		janusClient.setToken(clientToken);
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
 
@@ -113,8 +114,8 @@ describe("videoroom", () => {
 	});
 
 	it("should destroy a room", async () => {
-		const janusClient = new JanusClient(clientTransport);
-		janusClient.setToken(clientToken);
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
 
@@ -160,8 +161,8 @@ describe("videoroom", () => {
 	});
 
 	it("should check if a room exist", async () => {
-		const janusClient = new JanusClient(clientTransport);
-		janusClient.setToken(clientToken);
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
 
@@ -200,8 +201,8 @@ describe("videoroom", () => {
 	});
 
 	it("should disable a room", async () => {
-		const janusClient = new JanusClient(clientTransport);
-		janusClient.setToken(clientToken);
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
 
@@ -231,8 +232,8 @@ describe("videoroom", () => {
 	});
 
 	it("should join a publisher, kick them out and make sure they are kicked", async () => {
-		const janusClient = new JanusClient(clientTransport);
-		janusClient.setToken(clientToken);
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
 
@@ -277,6 +278,8 @@ describe("videoroom", () => {
 			id: allowed_result.id
 		});
 
+		// TODO: verify  kicked event was sent
+
 		expect(kick_result).to.deep.eq({
 			videoroom: "success"
 		});
@@ -293,6 +296,87 @@ describe("videoroom", () => {
 		await videoPlugin.dispose();
 
 	});
+
+
+	it("should join a publisher and publish", async () => {
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
+
+		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+
+		const room_number = generate_random_number();
+
+		const create_result = await videoPlugin.create({
+			request: "create",
+			room: room_number,
+			is_private: false,
+		});
+
+		await videoPlugin.allowed({
+			request: "allowed",
+			action: "disable",
+			room: room_number
+		});
+
+		const allowed_result = await videoPlugin.join_publisher({
+			request: "join",
+			ptype: "publisher",
+			room: room_number,
+			token: clientToken
+		});
+
+		const publish_result = await videoPlugin.publish({
+			request: "publish"
+		});
+
+		expect(publish_result).to.deep.eq({
+			videoroom: "event",
+			room: room_number,
+			configured: "ok"
+		});
+
+		await videoPlugin.dispose();
+
+	});
+
+	it.skip("should join a publisher, publish and unpublish", async () => {
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
+
+		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+
+		const room_number = generate_random_number();
+
+		const create_result = await videoPlugin.create({
+			request: "create",
+			room: room_number,
+			is_private: false,
+		});
+
+		await videoPlugin.allowed({
+			request: "allowed",
+			action: "disable",
+			room: room_number
+		});
+
+		const allowed_result = await videoPlugin.join_publisher({
+			request: "join",
+			ptype: "publisher",
+			room: room_number,
+			token: clientToken
+		});
+
+		const publish_result = await videoPlugin.publish({
+			request: "publish"
+		});
+
+		const unpublish_result = await videoPlugin.unpublish();
+		expect(unpublish_result).to.be.true;
+
+		await videoPlugin.dispose();
+
+	});
+
 
 });
 
