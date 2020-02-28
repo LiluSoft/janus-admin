@@ -14,13 +14,16 @@ import { IEventClient } from "../events/IEventClient";
 
 
 export class EventClientTransport extends ITransport {
+	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: import("./IEventData").IEventData<T>) => void): void {
+		throw new Error("Method not implemented.");
+	}
 	private _logger = bunyan.createLogger({ name: "EventClientTransport" });
 
 	private _ready = false;
 	private _ready_promises: DeferredPromise<boolean>[] = [];
 	private _dispose_promises: DeferredPromise<void>[] = [];
 
-	private _transactions: { [transaction_id: string]: DeferredPromise<any> } = {};
+	private _transactions: { [transaction_id: string]: DeferredPromise<unknown> } = {};
 
 	private globalEmitter = new EventEmitter();
 
@@ -34,7 +37,7 @@ export class EventClientTransport extends ITransport {
 		this._ready_promises = [];
 
 		for (const promise of this._dispose_promises) {
-			promise.resolve(null);
+			promise.resolve(undefined);
 		}
 		this._dispose_promises = [];
 

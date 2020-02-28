@@ -13,9 +13,9 @@ export class DeferredPromise<T>{
 	public promise: Promise<T>;
 	public resolve: (result: T) => void;
 	public reject: (err: Error) => void;
-	public transaction: Transaction;
-	public session: Session;
-	public stack: string;
+	public transaction?: Transaction;
+	public session?: Session;
+	public stack?: string;
 	public ignore_ack: boolean;
 
 	public static async create<T>(transaction?: Transaction, session?: Session, ignore_ack?: boolean) {

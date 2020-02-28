@@ -2,13 +2,16 @@ import { ITransport } from "../transports/ITransport";
 import { IRequest } from "../transports/IRequest";
 import { IResponse } from "../transports/IResponse";
 import { ISessionResponse } from "../abstractions/ISessionResponse";
-import { PluginHandle, JanusSession, IRequestWithBody, IVideoRoomResponse } from "..";
+import { PluginHandle, JanusSession, IRequestWithBody, IVideoRoomResponse, JanusError } from "..";
 import { IPluginHandleResponse } from "../abstractions/IHandleResponse";
 import { IRequestWithToken } from "../transports/IRequestWithToken";
 import bunyan from "bunyan";
 import { IPluginDataResponse } from "../abstractions/IPluginDataResponse";
 import { IRequestWithJSEP } from "../transports/IRequestWithJSEP";
 import { ITrickleRequest } from "./models/ITrickleRequest";
+import { IBaseRequest } from "../transports/IBaseRequest";
+import { IMessageResponse } from "./models/IMessageResponse";
+import { IErrorResponse, IMessageRequest } from "./models";
 
 /**
  * Janus Client
@@ -25,7 +28,7 @@ export class JanusClient {
 	 * @param {ITransport} transport Transport for communicating with Janus gateway
 	 * @memberof JanusClient
 	 */
-	constructor(public readonly transport: ITransport, public readonly token?:string) {
+	constructor(public readonly transport: ITransport, public readonly token?: string) {
 		if (this.transport.isAdminEndpoint()) {
 			this._logger.error("Transport must be connected to Client endpoint");
 			throw new Error("Transport must be connected to Client endpoint");
@@ -46,9 +49,14 @@ export class JanusClient {
 		}
 
 		const response = await this.transport.request<IResponse<ISessionResponse>>(req);
-		this._logger.debug("created new session", response.data.id);
+		this._logger.debug("created new session", response.data);
 
-		return new JanusSession(response.data.id);
+		if (response.data) {
+			return new JanusSession(response.data.id);
+		} else {
+			throw new JanusError(-1, "Unable to create a new session");
+		}
+
 	}
 
 	/**
@@ -94,7 +102,11 @@ export class JanusClient {
 
 		const response = await this.transport.request<IResponse<IPluginHandleResponse>>(req, session);
 
-		return new PluginHandle(response.data.id, session, plugin_id);
+		if (response.data) {
+			return new PluginHandle(response.data.id, session, plugin_id);
+		}
+
+		throw new JanusError(-1, "Unable to create a new PluginHandle");
 	}
 
 	/**
@@ -196,10 +208,10 @@ export class JanusClient {
 	 * @returns
 	 * @memberof JanusClient
 	 */
-	public async message<T>(handle: PluginHandle, body: T, jsep?: any) {
+	public async message<TResult>(handle: PluginHandle, body: IMessageRequest, jsep?: any) {
 		this._logger.debug("message", handle, body);
 
-		const create_request: IRequestWithBody<T> & IRequestWithToken & IRequestWithJSEP = {
+		const create_request: IRequestWithBody<IMessageRequest> & IRequestWithToken & IRequestWithJSEP = {
 			janus: "message",
 			session_id: handle.session.session_id,
 			handle_id: handle.handle_id,
@@ -214,8 +226,11 @@ export class JanusClient {
 			create_request.token = this.token;
 		}
 
-		const created_result = await this.transport.request<void>(create_request, handle.session, handle);
+		const created_result = await this.transport.request<IMessageResponse<TResult>>(create_request, handle.session, handle);
 
+		if (created_result.plugindata.data.error && created_result.plugindata.data.error_code) {
+			throw new JanusError(created_result.plugindata.data.error_code, created_result.plugindata.data.error);
+		}
 		return created_result;
 	}
 

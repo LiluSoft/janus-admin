@@ -7,4 +7,3 @@ export * from "./transports";
 export * from "./events";
 export * from "./plugins";
 export * from "./plugins/videoroom/plugin";
-export * from "./client";

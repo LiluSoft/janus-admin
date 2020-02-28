@@ -721,7 +721,7 @@ export class JanusAdmin {
 	 * 		"events": "all"
 	 * };
 	 *
-	 * const response = await admin.query_eventhandler<IMQTTEVHRequest, any>("janus.eventhandler.mqttevh", request);
+	 * const response = await admin.query_eventhandler<IMQTTEVHRequest, unknown>("janus.eventhandler.mqttevh", request);
 	 * ```
 	 */
 	public async query_eventhandler<TRequest, TResponse>(handler: string, request: TRequest) {

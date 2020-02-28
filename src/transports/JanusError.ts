@@ -1,6 +1,8 @@
 export class JanusError extends Error {
-	constructor(private code: number, private reason: string, public stack: string) {
+	constructor(public code: number, private reason: string, public stack?: string) {
 		super(reason);
-		this.stack = this.stack + stack;
+		if (stack) {
+			this.stack = this.stack + stack;
+		}
 	}
 }

@@ -43,7 +43,8 @@ import { JanusClient } from "../../client/JanusClient";
 import { IRequestWithToken } from "../../transports";
 import { ISuccessResponse } from ".";
 import { IEventData } from "../../transports/IEventData";
-import { IConfigured } from "./models";
+import { IConfigured, IUnpublishRequest } from "./models";
+import { IUnpublishResponse } from "./models/IUnpublishResponse";
 
 /**
  * VideoRoom SFU Plugin
@@ -73,11 +74,11 @@ export class VideoRoomPlugin {
 		const handle = await client.CreateHandle(session, "janus.plugin.videoroom");
 
 		const plugin = new VideoRoomPlugin(client.transport, client, session, handle);
-		client.transport.subscribe_plugin_events(session, plugin._handle_event);
+		client.transport.subscribe_plugin_events(session, plugin.handle_event);
 		return plugin;
 	}
 
-	private _handle_event<T>(event: IEventData<T>) {
+	private handle_event<T>(event: IEventData<T>) {
 		console.log(event);
 	}
 
@@ -85,7 +86,7 @@ export class VideoRoomPlugin {
 	 * Cleanup VideoRoomPlugin
 	 */
 	public async dispose() {
-		const destroyedHandle = await this._client.DetachHandle(this._handle);
+		const destroyedHandle = await this._client.DetachHandle(this.handle);
 		const destroyedSession = await this._client.DestroySession(this._session);
 		this._logger.debug("destroyed", destroyedHandle, destroyedSession);
 	}
@@ -96,9 +97,9 @@ export class VideoRoomPlugin {
 	 * @param _transport transport to use
 	 * @param _client janus client to use
 	 * @param _session janus session to use
-	 * @param _handle  plugin handle to use
+	 * @param handle  plugin handle to use
 	 */
-	private constructor(private _transport: ITransport, private _client: JanusClient, private _session: JanusSession, private _handle: PluginHandle) {
+	private constructor(private xtransport: ITransport, private _client: JanusClient, private _session: JanusSession, public readonly handle: PluginHandle) {
 
 	}
 
@@ -120,17 +121,16 @@ export class VideoRoomPlugin {
 	public async create(req: ICreateRequest): Promise<ICreatedResponse> {
 		this._logger.debug("create", req);
 
-		const create_request: IRequestWithBody<ICreateRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const create_request: IRequestWithBody<ICreateRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			create_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	create_request.token = this._client.token;
+		// }
 
-		const created_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ICreatedResponse>>>(create_request, this._session, this._handle);
-
+		const created_result = await this._client.message<IVideoRoomResponse<ICreatedResponse>>(this.handle, req);
 		return created_result.plugindata.data;
 	}
 
@@ -153,16 +153,16 @@ export class VideoRoomPlugin {
 	public async edit(req: IEditRequest): Promise<IEditedResponse> {
 		this._logger.debug("edit", req);
 
-		const edit_request: IRequestWithBody<IEditRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const edit_request: IRequestWithBody<IEditRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			edit_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	edit_request.token = this._client.token;
+		// }
 
-		const edit_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IEditedResponse>>>(edit_request, this._session, this._handle);
+		const edit_result = await this._client.message<IVideoRoomResponse<IEditedResponse>>(this.handle, req);
 
 		return edit_result.plugindata.data;
 	}
@@ -187,16 +187,16 @@ export class VideoRoomPlugin {
 	public async destroy(req: IDestroyRequest): Promise<IDestroyedResponse> {
 		this._logger.debug("destroy", req);
 
-		const destroy_request: IRequestWithBody<IDestroyRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const destroy_request: IRequestWithBody<IDestroyRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			destroy_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	destroy_request.token = this._client.token;
+		// }
 
-		const destroy_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IDestroyedResponse>>>(destroy_request, this._session, this._handle);
+		const destroy_result = await this._client.message<IVideoRoomResponse<IDestroyedResponse>>(this.handle, req);
 
 		return destroy_result.plugindata.data;
 	}
@@ -220,16 +220,16 @@ export class VideoRoomPlugin {
 	public async exists(req: IExistsRequest): Promise<IExistsResponse> {
 		this._logger.debug("exists", req);
 
-		const exists_request: IRequestWithBody<IExistsRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const exists_request: IRequestWithBody<IExistsRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			exists_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	exists_request.token = this._client.token;
+		// }
 
-		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IExistsResponse>>>(exists_request, this._session, this._handle);
+		const exists_result = await this._client.message<IVideoRoomResponse<IExistsResponse>>(this.handle, req);
 
 		return exists_result.plugindata.data;
 	}
@@ -255,16 +255,16 @@ export class VideoRoomPlugin {
 	public async allowed(req: IAllowedRequest): Promise<IAllowedResponse> {
 		this._logger.debug("allowed", req);
 
-		const allowed_request: IRequestWithBody<IAllowedRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const allowed_request: IRequestWithBody<IAllowedRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			allowed_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	allowed_request.token = this._client.token;
+		// }
 
-		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IAllowedResponse>>>(allowed_request, this._session, this._handle);
+		const exists_result = await this._client.message<IVideoRoomResponse<IAllowedResponse>>(this.handle, req);
 
 		return exists_result.plugindata.data;
 	}
@@ -292,16 +292,16 @@ export class VideoRoomPlugin {
 	public async kick(req: IKickRequest): Promise<ISuccessResponse> {
 		this._logger.debug("kick", req);
 
-		const allowed_request: IRequestWithBody<IKickRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const allowed_request: IRequestWithBody<IKickRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			allowed_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	allowed_request.token = this._client.token;
+		// }
 
-		const exists_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<ISuccessResponse>>>(allowed_request, this._session, this._handle);
+		const exists_result = await this._client.message<IVideoRoomResponse<ISuccessResponse>>(this.handle, req);
 
 		return exists_result.plugindata.data;
 	}
@@ -324,16 +324,16 @@ export class VideoRoomPlugin {
 	public async list(req: IListRequest): Promise<IListResponse> {
 		this._logger.debug("list", req);
 
-		const list_request: IRequestWithBody<IListRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const list_request: IRequestWithBody<IListRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			list_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	list_request.token = this._client.token;
+		// }
 
-		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListResponse>>>(list_request, this._session, this._handle);
+		const list = await this._client.message<IVideoRoomResponse<IListResponse>>(this.handle, req);
 		return list.plugindata.data;
 	}
 
@@ -356,16 +356,16 @@ export class VideoRoomPlugin {
 	public async listparticipants(req: IListParticipantsRequest): Promise<IListParticipantsResponse> {
 		this._logger.debug("listparticipants", req);
 
-		const list_participants: IRequestWithBody<IListParticipantsRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const list_participants: IRequestWithBody<IListParticipantsRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			list_participants.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	list_participants.token = this._client.token;
+		// }
 
-		const list = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IListParticipantsResponse>>>(list_participants, this._session, this._handle);
+		const list = await this._client.message<IVideoRoomResponse<IListParticipantsResponse>>(this.handle, req);
 		return list.plugindata.data;
 	}
 
@@ -391,16 +391,16 @@ export class VideoRoomPlugin {
 	public async join_publisher(req: IJoinPublisherRequest): Promise<IJoinPublisherResponse> {
 		this._logger.debug("join/publisher", req);
 
-		const list_request: IRequestWithBody<IJoinPublisherRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const list_request: IRequestWithBody<IJoinPublisherRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			list_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	list_request.token = this._client.token;
+		// }
 
-		const publisher_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IJoinPublisherResponse>>>(list_request, this._session, this._handle);
+		const publisher_result = await this._client.message<IVideoRoomResponse<IJoinPublisherResponse>>(this.handle, req);
 		return publisher_result.plugindata.data;
 	}
 
@@ -416,27 +416,57 @@ export class VideoRoomPlugin {
 	 * as the PeerConnection has been establisher, the publisher will become
 	 * active, and a new active feed other participants can subscribe to.
 	 *
-	 * @param req
+	 * @param req publish object
+	 * @param jsep jsep offer
 	 */
-	public async publish(req: IPublishRequest): Promise<IConfigured> {
+	public async publish(req: IPublishRequest,jsep?:any): Promise<IConfigured> {
 		this._logger.debug("publish", req);
 
-		const list_request: IRequestWithBody<IPublishRequest> & IRequestWithToken = {
-			janus: "message",
-			body: req
-		};
+		// const list_request: IRequestWithBody<IPublishRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: req
+		// };
 
-		if (this._client && this._client.token) {
-			list_request.token = this._client.token;
-		}
+		// if (this._client && this._client.token) {
+		// 	list_request.token = this._client.token;
+		// }
 
-		const publish_result = await this._transport.request<IPluginDataResponse<IVideoRoomResponse<IConfigured>>>(list_request, this._session, this._handle);
+		const publish_result = await this._client.message<IVideoRoomResponse<IConfigured>>(this.handle, req,jsep);
 		return publish_result.plugindata.data;
 	}
-	public unpublish() {
-		// nop
+	/**
+	 * stop publishing and tear down the related PeerConnection
+	 *
+	 * @returns {Promise<boolean>}
+	 * @memberof VideoRoomPlugin
+	 */
+	public async unpublish(): Promise<boolean> {
+		this._logger.debug("unpublish");
+
+		// const list_request: IRequestWithBody<IUnpublishRequest> & IRequestWithToken = {
+		// 	janus: "message",
+		// 	body: {
+		// 		request: "unpublish"
+		// 	}
+		// };
+
+		// if (this._client && this._client.token) {
+		// 	list_request.token = this._client.token;
+		// }
+
+		const unpublish_result = await this._client.message<IVideoRoomResponse<IUnpublishResponse>>(this.handle, {
+			request: "unpublish"
+		});
+		return unpublish_result.plugindata.data.unpublished === "ok";
+
+		// const publisher_result = await this._client.message<IPluginDataResponse<IVideoRoomResponse<IUnpublishResponse>>>(list_request, this._session, this.handle);
+		// console.log(publisher_result);
+		// return publisher_result.plugindata.data.unpublished === "ok";
+		return false;
 	}
-	public configure(req: IConfigureRequest): Promise<boolean> { throw new Error("not implemented"); }
+	public configure(req: IConfigureRequest): Promise<boolean> {
+		throw new Error("not implemented");
+	}
 	public rtp_forward(req: IRTPForwardRequest): Promise<IRTPForwardResponse> { throw new Error("not implemented"); }
 	public stop_rtp_forward(req: IStopRTPForwardRequest): Promise<IStopRTPForwardResponse> { throw new Error("not implemented"); }
 	public listforwarders(req: IListForwardersRequest): Promise<IListForwardersResponse> { throw new Error("not implemented"); }

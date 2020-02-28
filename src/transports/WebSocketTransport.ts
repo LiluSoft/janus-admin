@@ -35,7 +35,7 @@ export class WebSocketTransport extends ITransport {
 	private _ready_promises: DeferredPromise<boolean>[] = [];
 	private _dispose_promises: DeferredPromise<void>[] = [];
 
-	private _transactions: { [transaction_id: string]: DeferredPromise<any> } = {};
+	private _transactions: { [transaction_id: string]: DeferredPromise<unknown> } = {};
 
 	private globalEmitter = new EventEmitter();
 
@@ -103,7 +103,7 @@ export class WebSocketTransport extends ITransport {
 				this._ready_promises = [];
 
 				for (const promise of this._dispose_promises) {
-					promise.resolve(null);
+					promise.resolve(undefined);
 				}
 				this._dispose_promises = [];
 
@@ -115,7 +115,7 @@ export class WebSocketTransport extends ITransport {
 					this._logger.debug("Received: '" + message.utf8Data + "'");
 				}
 
-				const data = JSON.parse(message.utf8Data);
+				const data = JSON.parse(message.utf8Data || "");
 
 				this._logger.debug("data", data);
 
@@ -182,8 +182,13 @@ export class WebSocketTransport extends ITransport {
 					deferredPromise.reject(new JanusError(data.error.code, data.error.reason, deferredPromise.stack));
 					return;
 				} else if (data.janus === "ack") {
-					this._logger.debug("ack received, waiting for async response", data);
-					return;
+					if (deferredPromise && deferredPromise.ignore_ack) {
+						this._logger.debug("ack received, waiting for async response", data);
+						return;
+					} else {
+						this._logger.debug("ack relayed", data);
+						deferredPromise.resolve(data);
+					}
 				} else if (data.janus === "timeout") {
 					// TODO: notify session timeout
 					this._logger.error("timeout", data);
@@ -204,7 +209,7 @@ export class WebSocketTransport extends ITransport {
 
 	}
 
-	public subscribe_plugin_events<T>(plugin_name: string, callback: (event: IEventData<T>) => void) {
+	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEventData<T>) => void) {
 		this.globalEmitter.on("event", callback);
 	}
 
@@ -246,8 +251,9 @@ export class WebSocketTransport extends ITransport {
 			this._websocket.abort();
 		}
 
-		this._connection = null;
-		this._websocket = null;
+		delete this._connection;
+		delete this._websocket;
+		this.globalEmitter.removeAllListeners();
 
 		return deferredPromise.promise;
 	}
@@ -278,6 +284,12 @@ export class WebSocketTransport extends ITransport {
 
 		const deferredPromise = await DeferredPromise.create<ResponseT>(transaction);
 		deferredPromise.transaction = transaction;
+
+		switch (req.janus) {
+			case "keepalive":
+				deferredPromise.ignore_ack = false;
+				break;
+		}
 
 		this._transactions[transaction.getTransactionId()] = deferredPromise;
 

@@ -2,7 +2,9 @@ import { ITransport } from "./ITransport";
 import { IRequest } from "./IRequest";
 import { JanusSession, PluginHandle, Transaction } from "..";
 import superagent from "superagent";
-
+import { EventEmitter } from "events";
+import { IEventData } from "./IEventData";
+import bunyan from "bunyan";
 
 /**
  * RESTful interface to Janus API
@@ -19,6 +21,41 @@ import superagent from "superagent";
  * @extends {ITransport}
  */
 export class HTTPTransport extends ITransport {
+	private _logger = bunyan.createLogger({ name: "JanusClient", level: "info" });
+
+	private _eventEmitter = new EventEmitter();
+
+	// for each session, keep a long poll, for each event, pass on to "event"
+	private _sessionTimers: { [session_id: number]: NodeJS.Timeout } = {};
+
+	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEventData<T>) => void): void {
+		if (!this._sessionTimers[session.session_id]) {
+			this._trackSession(session);
+		}
+		this._eventEmitter.on("event", callback);
+	}
+
+	private _trackSession(session: JanusSession) {
+		const trackTimer = async () => {
+			const result = await superagent.get(this.url + `/${session.session_id}?maxev=5`).send();
+			const events = result.body as IEventData<void>[];
+			for (const event of events) {
+				this._longPollHandler(event);
+			}
+
+			this._sessionTimers[session.session_id] = setTimeout(trackTimer, 0);
+		};
+		this._sessionTimers[session.session_id] = setTimeout(trackTimer, 0);
+	}
+
+	private _longPollHandler<T>(data: IEventData<T>) {
+		if (data.janus === "event") {
+			this._logger.debug("janus event", data);
+			this._eventEmitter.emit("event", data);
+			return;
+		}
+	}
+
 	/**
 	 * Creates an instance of HTTPTransport
 	 *
@@ -76,7 +113,11 @@ export class HTTPTransport extends ITransport {
 	 * @memberof HTTPTransport
 	 */
 	public async dispose(): Promise<void> {
-		// nop
+		for (const session_id of Object.keys(this._sessionTimers) as any as number[]) {
+			this._logger.debug("clearing long poll for session", session_id);
+			clearTimeout(this._sessionTimers[session_id]);
+		}
+		this._sessionTimers = {};
 	}
 	/**
 	 * Waits for the Transport to be ready
