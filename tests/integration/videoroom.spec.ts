@@ -377,6 +377,46 @@ describe("videoroom", () => {
 
 	});
 
+	it("should join a publisher, publish and configure", async () => {
+		const janusClient = new JanusClient(clientTransport, clientToken);
+
+
+		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
+
+		const room_number = generate_random_number();
+
+		const create_result = await videoPlugin.create({
+			request: "create",
+			room: room_number,
+			is_private: false,
+		});
+
+		await videoPlugin.allowed({
+			request: "allowed",
+			action: "disable",
+			room: room_number
+		});
+
+		const allowed_result = await videoPlugin.join_publisher({
+			request: "join",
+			ptype: "publisher",
+			room: room_number,
+			token: clientToken
+		});
+
+		const publish_result = await videoPlugin.publish({
+			request: "publish"
+		});
+
+		const configure_result = await videoPlugin.configure({
+			request: "configure",
+			audio:true
+		});
+		expect(configure_result).to.be.true;
+
+		await videoPlugin.dispose();
+
+	});
 
 });
 

@@ -13,6 +13,22 @@ export interface IConfigureRequest {
 	 */
 	"data"?: boolean;
 	/**
+	 * substream to receive (0-2), in case simulcasting is enabled; optional
+	 */
+	"substream"?: number;
+	/**
+	 * temporal layers to receive (0-2), in case simulcasting is enabled; optional
+	 */
+	"temporal"?: number;
+	/**
+	 * spatial layer to receive (0-2), in case VP9-SVC is enabled; optional
+	 */
+	"spatial_layer": number;
+	/**
+	 * temporal layers to receive (0-2), in case VP9-SVC is enabled; optional
+	 */
+	"temporal_layer": number;
+	/**
 	 * bitrate cap to return via REMB; optional, overrides the global room value if present (unless bitrate_cap is set)
 	 */
 	"bitrate"?: number;

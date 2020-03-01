@@ -42,4 +42,20 @@ export interface IJoinSubscriberRequest {
 	 * true|false; whether or not datachannels should be negotiated; true by default if the publisher has datachannels
 	 */
 	"offer_data"?: boolean;
+	/**
+	 * substream to receive (0-2), in case simulcasting is enabled; optional
+	 */
+	"substream"? : number;
+	/**
+	 * temporal layers to receive (0-2), in case simulcasting is enabled; optional
+	 */
+	"temporal"? : number;
+	/**
+	 * spatial layer to receive (0-2), in case VP9-SVC is enabled; optional
+	 */
+	"spatial_layer"? : number;
+	/**
+	 * temporal layers to receive (0-2), in case VP9-SVC is enabled; optional
+	 */
+	"temporal_layer"? : number;
 }

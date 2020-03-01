@@ -1,4 +1,6 @@
-export interface ISwitchResponse {
+import { IVideoRoomEvent } from "./IVideoRoomEvent";
+
+export interface ISwitchedEvent extends IVideoRoomEvent  {
 	"videoroom": "event";
 	"switched": "ok";
 	/**

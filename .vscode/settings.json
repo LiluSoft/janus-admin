@@ -27,6 +27,7 @@
         "localport",
         "logline",
         "maxev",
+        "mountpoint",
         "mqttevh",
         "opaqueid",
         "pcap",

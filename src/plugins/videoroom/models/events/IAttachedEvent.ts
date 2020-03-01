@@ -1,4 +1,6 @@
-export interface IAttachedResponse {
+import { IVideoRoomEvent } from "./IVideoRoomEvent";
+
+export interface IAttachedEvent extends IVideoRoomEvent{
 	"videoroom": "attached";
 	/**
 	 * room ID
