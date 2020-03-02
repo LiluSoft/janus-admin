@@ -5,19 +5,22 @@ import { PluginHandle } from "../abstractions/PluginHandle";
 
 import mqtt from "mqtt";
 import { promises } from "fs";
-import bunyan from "bunyan";
 import { EventEmitter } from "events";
 import { MQTTEventClient } from "../events/MQTTEventClient";
 import { DeferredPromise } from "./DeferredPromise";
-import { Transaction, JanusError } from "..";
+import { Transaction, JanusError } from "../index_browser";
 import { IEventClient } from "../events/IEventClient";
+import { ILogger } from "../logger/ILogger";
+import { ILoggerFactory } from "../logger/ILoggerFactory";
 
 
 export class EventClientTransport extends ITransport {
+	private _logger: ILogger;
+
 	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: import("./IEventData").IEventData<T>) => void): void {
 		throw new Error("Method not implemented.");
 	}
-	private _logger = bunyan.createLogger({ name: "EventClientTransport" });
+
 
 	private _ready = false;
 	private _ready_promises: DeferredPromise<boolean>[] = [];
@@ -46,8 +49,10 @@ export class EventClientTransport extends ITransport {
 	}
 
 
-	constructor(client: IEventClient, private subscribe_topic: string, private publish_topic: string, private isAdmin: boolean) {
+	constructor(loggerFactory: ILoggerFactory, client: IEventClient, private subscribe_topic: string, private publish_topic: string, private isAdmin: boolean) {
 		super();
+		this._logger = loggerFactory.create("EventClientTransport");
+
 		this._client = client;
 
 	}

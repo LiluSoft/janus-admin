@@ -1,6 +1,6 @@
 import { WebSocketTransport } from "../../src/transports/WebSocketTransport";
 import { VideoRoomPlugin } from "../../src/plugins/videoroom/plugin";
-import { ITransport, JanusAdmin, Transaction } from "../../src";
+import { ITransport, JanusAdmin, Transaction, ServerLoggerFactory } from "../../src/index_server";
 import { expect } from "chai";
 import "mocha";
 import { client } from "websocket";
@@ -10,13 +10,15 @@ import chaiSubset from "chai-subset";
 import { JanusClient } from "../../src/client/JanusClient";
 chai.use(chaiSubset);
 
+const loggerFactory = new ServerLoggerFactory();
+
 describe("videoroom", () => {
 	let adminTransport: ITransport;
 	let clientToken: string;
 	let clientTransport: ITransport;
 
 	beforeEach(async () => {
-		adminTransport = new WebSocketTransport("ws://192.168.99.100:7188", "janus-admin-protocol");
+		adminTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:7188", "janus-admin-protocol");
 		expect(await adminTransport.waitForReady()).to.be.true;
 		const admin = new JanusAdmin(adminTransport, "janusoverlord");
 
@@ -25,7 +27,7 @@ describe("videoroom", () => {
 
 		await admin.add_token(clientToken);
 
-		clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+		clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 		expect(await clientTransport.waitForReady()).to.be.true;
 	});
 	afterEach(async () => {
@@ -33,7 +35,7 @@ describe("videoroom", () => {
 		await clientTransport.dispose();
 	});
 	it("should attach plugin", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -43,7 +45,7 @@ describe("videoroom", () => {
 	});
 
 	it("should create a room", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -68,7 +70,7 @@ describe("videoroom", () => {
 	});
 
 	it("should edit a room", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -114,7 +116,7 @@ describe("videoroom", () => {
 	});
 
 	it("should destroy a room", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -161,7 +163,7 @@ describe("videoroom", () => {
 	});
 
 	it("should check if a room exist", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -201,7 +203,7 @@ describe("videoroom", () => {
 	});
 
 	it("should disable a room", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -232,7 +234,7 @@ describe("videoroom", () => {
 	});
 
 	it("should join a publisher, kick them out and make sure they are kicked", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -299,7 +301,7 @@ describe("videoroom", () => {
 
 
 	it("should join a publisher and publish", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -340,7 +342,7 @@ describe("videoroom", () => {
 	});
 
 	it.skip("should join a publisher, publish and unpublish", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);
@@ -378,7 +380,7 @@ describe("videoroom", () => {
 	});
 
 	it("should join a publisher, publish and configure", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory,clientTransport, clientToken);
 
 
 		const videoPlugin = await VideoRoomPlugin.attach(janusClient);

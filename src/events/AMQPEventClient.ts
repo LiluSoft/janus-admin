@@ -2,10 +2,9 @@ import mqtt from "mqtt";
 import { IEventClient } from "./IEventClient";
 import { client } from "websocket";
 import { promises } from "fs";
-import bunyan from "bunyan";
 import { EventEmitter } from "events";
 import amqplib from "amqplib";
-import { timingSafeEqual } from "crypto";
+import { ILoggerFactory, ILogger } from "../logger/index_server";
 
 /**
  * AMQP / RabbitMQ Client
@@ -15,7 +14,7 @@ import { timingSafeEqual } from "crypto";
  * @implements {IEventClient}
  */
 export class AMQPEventClient implements IEventClient {
-	private _logger = bunyan.createLogger({ name: "AMQPEventClient", level: "info" });
+	private _logger :ILogger;
 	private _eventEmitter = new EventEmitter();
 
 	private _readyPromise: Promise<boolean>;
@@ -30,7 +29,9 @@ export class AMQPEventClient implements IEventClient {
 	 * @param {*} socketOptions Socket Options, i.e. noDelay
 	 * @memberof AMQPEventClient
 	 */
-	constructor(url: string | amqplib.Options.Connect, socketOptions?: any) {
+	constructor(loggerFactory: ILoggerFactory, url: string | amqplib.Options.Connect, socketOptions?: any) {
+		this._logger = loggerFactory.create("AMQPEventClient");
+
 		this._logger.debug("Starting", url);
 
 		this._readyPromise = new Promise<boolean>((resolve, reject) => {

@@ -1,4 +1,4 @@
-import { IRequest } from "../..";
+import { IRequest } from "../../index_browser";
 
 export interface ICandidate {
 	"sdpMid": string;

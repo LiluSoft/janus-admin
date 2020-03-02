@@ -23,11 +23,11 @@ export interface IConfigureRequest {
 	/**
 	 * spatial layer to receive (0-2), in case VP9-SVC is enabled; optional
 	 */
-	"spatial_layer": number;
+	"spatial_layer"?: number;
 	/**
 	 * temporal layers to receive (0-2), in case VP9-SVC is enabled; optional
 	 */
-	"temporal_layer": number;
+	"temporal_layer"?: number;
 	/**
 	 * bitrate cap to return via REMB; optional, overrides the global room value if present (unless bitrate_cap is set)
 	 */

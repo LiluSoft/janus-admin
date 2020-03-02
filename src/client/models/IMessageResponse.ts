@@ -1,6 +1,6 @@
 import { IPluginDataResponse } from "../../abstractions/IPluginDataResponse";
-import { IErrorResponse } from ".";
+import { IClientErrorResponse } from ".";
 
 export interface IMessageResponse<T> extends IPluginDataResponse<T> {
-	plugindata: T & IErrorResponse;
+	plugindata: T & IClientErrorResponse;
 }

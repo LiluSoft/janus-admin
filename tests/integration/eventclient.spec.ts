@@ -2,10 +2,11 @@ import { fail } from "assert";
 import { expect } from "chai";
 import "mocha";
 
-import { MQTTEventClient } from "../../src";
-import { AMQPEventClient } from "../../src";
+import { MQTTEventClient, IEventClient, AMQPEventClient } from "../../src/index_server";
 import { waitfor } from "../timing";
-import { IEventClient } from "../../src";
+import { ServerLoggerFactory } from "../../src/logger/index_server";
+
+const loggerFactory = new ServerLoggerFactory();
 
 const eventClients: {
 	name: string;
@@ -16,16 +17,16 @@ const eventClients: {
 }[] = [
 		{
 			name: "MQTT",
-			subscribeClient: () => new MQTTEventClient("tcp://192.168.99.100:1883", { username: "guest", password: "guest" }),
-			publishClient: () => new MQTTEventClient("tcp://192.168.99.100:1883", { username: "guest", password: "guest" }),
+			subscribeClient: () => new MQTTEventClient(loggerFactory, "tcp://192.168.99.100:1883", { username: "guest", password: "guest" }),
+			publishClient: () => new MQTTEventClient(loggerFactory, "tcp://192.168.99.100:1883", { username: "guest", password: "guest" }),
 
 			subscribeQueueName: "janus-test-events/#",
 			publishQueueName: "janus-test-events"
 		},
 		{
 			name: "AMQP",
-			subscribeClient: () => new AMQPEventClient({ hostname: "192.168.99.100", username: "guest", password: "guest" }, { noDelay: true }),
-			publishClient: () => new AMQPEventClient({ hostname: "192.168.99.100", username: "guest", password: "guest" }, { noDelay: true }),
+			subscribeClient: () => new AMQPEventClient(loggerFactory, { hostname: "192.168.99.100", username: "guest", password: "guest" }, { noDelay: true }),
+			publishClient: () => new AMQPEventClient(loggerFactory, { hostname: "192.168.99.100", username: "guest", password: "guest" }, { noDelay: true }),
 
 			subscribeQueueName: "janus-test-events",
 			publishQueueName: "janus-test-events"
@@ -43,7 +44,7 @@ for (const eventClient of eventClients) {
 			const messages: any[] = [];
 			const result = await subscriberClient.subscribe(eventClient.subscribeQueueName, (incomingMessage) => {
 				messages.push(incomingMessage);
-			},true);
+			}, true);
 
 			const publisherClient = eventClient.publishClient();
 			await publisherClient.waitForReady();

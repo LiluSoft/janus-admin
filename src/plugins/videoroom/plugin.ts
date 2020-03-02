@@ -37,10 +37,9 @@ import { IVideoRoomResponse } from "./models/IVideoRoomResponse";
 import { IVideoRoomError } from "./models/IVideoRoomError";
 import { JanusSession } from "../../abstractions/JanusSession";
 
-import bunyan from "bunyan";
 import { IRequestWithBody } from "../../transports/IRequestWithBody";
 import { JanusClient } from "../../client/JanusClient";
-import { IRequestWithToken } from "../../transports";
+import { IRequestWithToken } from "../../transports/index_server";
 import { ISuccessResponse } from ".";
 import { IEventData } from "../../transports/IEventData";
 import { IConfigured, IUnpublishRequest } from "./models";
@@ -53,6 +52,8 @@ import { IVideoRoomEvent } from "./models/events/IVideoRoomEvent";
 import { IStartedEvent } from "./models/events/IStartedEvent";
 import { IPausedEvent } from "./models/events/IPausedEvent";
 import { ILeftEvent } from "./models/events/ILeftEvent";
+import { ILogger } from "../../logger/ILogger";
+import { ILoggerFactory } from "../../logger/index_server";
 
 /**
  * VideoRoom SFU Plugin
@@ -61,7 +62,7 @@ import { ILeftEvent } from "./models/events/ILeftEvent";
  * @class VideoRoomPlugin
  */
 export class VideoRoomPlugin {
-	private _logger = bunyan.createLogger({ name: "VideoRoomPlugin" });
+	private _logger: ILogger;
 	private _eventEmitter = new EventEmitter();
 
 	/**
@@ -74,16 +75,15 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public static async attach(client: JanusClient, session?: JanusSession): Promise<VideoRoomPlugin> {
-		const logger = bunyan.createLogger({ name: "VideoRoomPlugin" });
-
 		if (!session) {
 			session = await client.CreateSession();
-			logger.debug("got session", session);
 		}
 		const handle = await client.CreateHandle(session, "janus.plugin.videoroom");
 
-		const plugin = new VideoRoomPlugin(client.transport, client, session, handle);
-		client.transport.subscribe_plugin_events(session, plugin.handle_event);
+		const plugin = new VideoRoomPlugin(client.loggerFactory, client, session, handle);
+		client.transport.subscribe_plugin_events(session, (event) => {
+			plugin.handle_event(event);
+		});
 		return plugin;
 	}
 
@@ -150,8 +150,8 @@ export class VideoRoomPlugin {
 	 * @param _session janus session to use
 	 * @param handle  plugin handle to use
 	 */
-	private constructor(private xtransport: ITransport, private _client: JanusClient, private _session: JanusSession, public readonly handle: PluginHandle) {
-
+	private constructor(private _loggerFactory: ILoggerFactory, private _client: JanusClient, private _session: JanusSession, public readonly handle: PluginHandle) {
+		this._logger = _loggerFactory.create("VideoRoom");
 	}
 
 	/**

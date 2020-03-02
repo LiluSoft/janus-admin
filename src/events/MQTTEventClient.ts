@@ -2,11 +2,12 @@ import mqtt from "mqtt";
 import { IEventClient } from "./IEventClient";
 import { client } from "websocket";
 import { promises } from "fs";
-import bunyan from "bunyan";
 import { EventEmitter } from "events";
+import { ILogger } from "../logger/ILogger";
+import { ILoggerFactory } from "../logger/index_server";
 
 export class MQTTEventClient implements IEventClient {
-	private _logger = bunyan.createLogger({ name: "MQTTEventClient", level: "info" });
+	private _logger : ILogger;
 	private _eventEmitter = new EventEmitter();
 
 	private _readyPromise: Promise<boolean>;
@@ -74,7 +75,9 @@ export class MQTTEventClient implements IEventClient {
 		return result;
 	}
 	private _client: mqtt.Client;
-	constructor(brokerUrl: string, opts?: mqtt.IClientOptions) {
+	constructor(loggerFactory: ILoggerFactory, brokerUrl: string, opts?: mqtt.IClientOptions) {
+		this._logger = loggerFactory.create("MQTTEventClient");
+
 		this._logger.debug("Starting", brokerUrl);
 		this._client = mqtt.connect(brokerUrl, opts);
 		this._readyPromise = new Promise<boolean>((resolve, reject) => {

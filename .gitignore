@@ -3,3 +3,4 @@ dist
 /docs/html
 /coverage
 /.nyc_output
+/examples/js

@@ -1,6 +1,6 @@
 import { WebSocketTransport } from "../../src/transports/WebSocketTransport";
 import { VideoRoomPlugin } from "../../src/plugins/videoroom/plugin";
-import { ITransport, JanusAdmin, Transaction } from "../../src";
+import { ITransport, JanusAdmin, Transaction, ServerLoggerFactory } from "../../src/index_server";
 import { expect } from "chai";
 import "mocha";
 import { client } from "websocket";
@@ -10,13 +10,15 @@ import chaiSubset from "chai-subset";
 import { JanusClient } from "../../src/client/JanusClient";
 chai.use(chaiSubset);
 
+const loggerFactory = new ServerLoggerFactory();
+
 describe("janus client", () => {
 	let adminTransport: ITransport;
 	let clientToken: string;
 	let clientTransport: ITransport;
 
 	beforeEach(async () => {
-		adminTransport = new WebSocketTransport("ws://192.168.99.100:7188", "janus-admin-protocol");
+		adminTransport = new WebSocketTransport(loggerFactory, "ws://192.168.99.100:7188", "janus-admin-protocol");
 		expect(await adminTransport.waitForReady()).to.be.true;
 		const admin = new JanusAdmin(adminTransport, "janusoverlord");
 
@@ -25,7 +27,7 @@ describe("janus client", () => {
 
 		await admin.add_token(clientToken);
 
-		clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+		clientTransport = new WebSocketTransport(loggerFactory, "ws://192.168.99.100:8188", "janus-protocol");
 		expect(await clientTransport.waitForReady()).to.be.true;
 	});
 	afterEach(async () => {
@@ -35,13 +37,13 @@ describe("janus client", () => {
 
 	it("should throw an error if attempting to use an admin endpoint", async () => {
 		expect(() => {
-			const shouldFailClient = new JanusClient(adminTransport, clientToken);
+			const shouldFailClient = new JanusClient(loggerFactory, adminTransport, clientToken);
 			expect(shouldFailClient).to.be.undefined;
 		}).throws;
 	});
 
 	it("should create a session", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory, clientTransport, clientToken);
 
 
 		const session = await janusClient.CreateSession();
@@ -50,7 +52,7 @@ describe("janus client", () => {
 	});
 
 	it("should destroy a session", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory, clientTransport, clientToken);
 
 
 		const session = await janusClient.CreateSession();
@@ -60,7 +62,7 @@ describe("janus client", () => {
 	});
 
 	it("should keep alive", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory, clientTransport, clientToken);
 
 
 		const session = await janusClient.CreateSession();
@@ -72,7 +74,7 @@ describe("janus client", () => {
 	});
 
 	it("should create a plugin session", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory, clientTransport, clientToken);
 
 
 		const session = await janusClient.CreateSession();
@@ -85,7 +87,7 @@ describe("janus client", () => {
 	});
 
 	it("should hangup a session", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory, clientTransport, clientToken);
 
 
 		const session = await janusClient.CreateSession();
@@ -96,7 +98,7 @@ describe("janus client", () => {
 	});
 
 	it("should create a plugin session", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory, clientTransport, clientToken);
 
 
 		const session = await janusClient.CreateSession();
@@ -109,7 +111,7 @@ describe("janus client", () => {
 	});
 
 	it("should claim a session", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory, clientTransport, clientToken);
 
 
 		const firstSession = await janusClient.CreateSession();
@@ -121,10 +123,10 @@ describe("janus client", () => {
 
 		await admin.add_token(clientToken);
 
-		const otherTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+		const otherTransport = new WebSocketTransport(loggerFactory, "ws://192.168.99.100:8188", "janus-protocol");
 		expect(await otherTransport.waitForReady()).to.be.true;
 
-		const otherJanusClient = new JanusClient(otherTransport, clientToken);
+		const otherJanusClient = new JanusClient(loggerFactory, otherTransport, clientToken);
 
 		const claim_response = await otherJanusClient.claim(firstSession);
 		expect(claim_response).to.be.true;
@@ -134,7 +136,7 @@ describe("janus client", () => {
 
 
 	it.skip("should trickle candidates", async () => {
-		const janusClient = new JanusClient(clientTransport, clientToken);
+		const janusClient = new JanusClient(loggerFactory, clientTransport, clientToken);
 
 
 		const session = await janusClient.CreateSession();

@@ -1,4 +1,4 @@
-export interface IErrorResponse {
+export interface IClientErrorResponse {
 	plugin: string;
 	data: {
 		/**

@@ -4,22 +4,27 @@ import chaiSubset from "chai-subset";
 import "mocha";
 chai.use(chaiSubset);
 
-import { WebSocketTransport } from "../../src";
+import {
+	WebSocketTransport,
+	ITransport,
+	EventClientTransport,
+	MQTTEventClient,
+	AMQPEventClient,
+	HTTPTransport,
+	JanusAdmin,
+	Transaction,
+	VideoRoomPlugin,
+	IListRequest,
+	IListResponse,
+	IMQTTEVHRequest
+} from "../../src/index_server";
 
-import { JanusAdmin } from "../../src";
-import { ITransport } from "../../src";
-import { Transaction } from "../../src";
-import { VideoRoomPlugin } from "../../src";
-import { IListRequest } from "../../src";
-import { IListResponse } from "../../src";
-import { MQTTEventClient } from "../../src";
-import { IMQTTEVHRequest } from "../../src";
-import { EventClientTransport } from "../../src";
 import { waitfor } from "../timing";
 import dgram from "dgram";
-import { AMQPEventClient } from "../../src";
-import { HTTPTransport } from "../../src";
 import { JanusClient } from "../../src/client/JanusClient";
+import { ServerLoggerFactory } from "../../src/logger/index_server";
+
+const loggerFactory = new ServerLoggerFactory();
 
 const transports:
 	{
@@ -30,25 +35,25 @@ const transports:
 		{
 			name: "WebSocket",
 			adminTransport: () => {
-				return new WebSocketTransport("ws://192.168.99.100:7188", "janus-admin-protocol");
+				return new WebSocketTransport(loggerFactory,"ws://192.168.99.100:7188", "janus-admin-protocol");
 			}
 		},
 		{
 			name: "MQTT",
 			adminTransport: () => {
-				return new EventClientTransport(new MQTTEventClient("tcp://192.168.99.100:1883", { username: "guest", password: "guest" }), "from-janus-admin/#", "to-janus-admin", true);
+				return new EventClientTransport(loggerFactory,new MQTTEventClient(loggerFactory,"tcp://192.168.99.100:1883", { username: "guest", password: "guest" }), "from-janus-admin/#", "to-janus-admin", true);
 			}
 		},
 		{
 			name: "RabbitMQ",
 			adminTransport: () => {
-				return new EventClientTransport(new AMQPEventClient({ hostname: "192.168.99.100", username: "guest", password: "guest" }, { noDelay: true }), "from-janus-admin", "to-janus-admin", true);
+				return new EventClientTransport(loggerFactory,new AMQPEventClient(loggerFactory,{ hostname: "192.168.99.100", username: "guest", password: "guest" }, { noDelay: true }), "from-janus-admin", "to-janus-admin", true);
 			}
 		},
 		{
 			name: "HTTP",
 			adminTransport: () => {
-				return new HTTPTransport("http://192.168.99.100:7088/admin", "janusoverlord", true);
+				return new HTTPTransport(loggerFactory,"http://192.168.99.100:7088/admin", "janusoverlord", true);
 			}
 		}
 	];
@@ -424,9 +429,9 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+			const clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
-			const janusClient = new JanusClient(clientTransport,random_token);
+			const janusClient = new JanusClient(loggerFactory,clientTransport, random_token);
 
 			const session = await janusClient.CreateSession();
 
@@ -449,9 +454,9 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+			const clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
-			const janusClient = new JanusClient(clientTransport,random_token);
+			const janusClient = new JanusClient(loggerFactory,clientTransport, random_token);
 			const session = await janusClient.CreateSession();
 
 			const handles = await admin.list_handles(session);
@@ -473,9 +478,9 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+			const clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
-			const janusClient = new JanusClient(clientTransport,random_token);
+			const janusClient = new JanusClient(loggerFactory,clientTransport, random_token);
 			const session = await janusClient.CreateSession();
 			const videoPlugin = await VideoRoomPlugin.attach(janusClient, session);
 
@@ -493,9 +498,9 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+			const clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
-			const janusClient = new JanusClient(clientTransport,random_token);
+			const janusClient = new JanusClient(loggerFactory,clientTransport, random_token);
 			const session = await janusClient.CreateSession();
 			const videoPlugin = await VideoRoomPlugin.attach(janusClient, session);
 
@@ -518,9 +523,9 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+			const clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
-			const janusClient = new JanusClient(clientTransport,random_token);
+			const janusClient = new JanusClient(loggerFactory,clientTransport, random_token);
 			const session = await janusClient.CreateSession();
 			const videoPlugin = await VideoRoomPlugin.attach(janusClient, session);
 
@@ -554,9 +559,9 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+			const clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
-			const janusClient = new JanusClient(clientTransport,random_token);
+			const janusClient = new JanusClient(loggerFactory,clientTransport, random_token);
 			const session = await janusClient.CreateSession();
 			const videoPlugin = await VideoRoomPlugin.attach(janusClient, session);
 
@@ -574,9 +579,9 @@ for (const transport of transports) {
 			const newTokenPlugins = await admin.add_token(random_token);
 			expect(newTokenPlugins.length).to.be.greaterThan(0);
 
-			const clientTransport = new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+			const clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 			expect(await clientTransport.waitForReady()).to.be.true;
-			const janusClient = new JanusClient(clientTransport,random_token);
+			const janusClient = new JanusClient(loggerFactory,clientTransport, random_token);
 			const session = await janusClient.CreateSession();
 			const videoPlugin = await VideoRoomPlugin.attach(janusClient, session);
 
@@ -610,7 +615,7 @@ for (const transport of transports) {
 		});
 
 		it("should send a custom event", async () => {
-			const client = new MQTTEventClient("tcp://192.168.99.100:1883", { username: "guest", password: "guest" });
+			const client = new MQTTEventClient(loggerFactory,"tcp://192.168.99.100:1883", { username: "guest", password: "guest" });
 			await client.waitForReady();
 
 			const messages: any[] = [];
@@ -673,22 +678,22 @@ for (const transport of transports) {
 	});
 }
 
-describe("admin", ()=>{
-	it("should throw an error when the transport is not on admin endpoint", async ()=>{
-		const transport =  new WebSocketTransport("ws://192.168.99.100:8188", "janus-protocol");
+describe("admin", () => {
+	it("should throw an error when the transport is not on admin endpoint", async () => {
+		const transport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
 		await transport.waitForReady();
-		expect(()=>{
-			const admin = new JanusAdmin(transport,"test");
+		expect(() => {
+			const admin = new JanusAdmin(transport, "test");
 		}).throws;
 
 		await transport.dispose();
 	});
 
-	it("should return the same secret",async ()=>{
-		const transport =  new WebSocketTransport("ws://192.168.99.100:7188", "janus-admin-protocol");
+	it("should return the same secret", async () => {
+		const transport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:7188", "janus-admin-protocol");
 		await transport.waitForReady();
 
-		const admin = new JanusAdmin(transport,"test-password");
+		const admin = new JanusAdmin(transport, "test-password");
 
 		expect(admin.admin_secret).to.eq("test-password");
 

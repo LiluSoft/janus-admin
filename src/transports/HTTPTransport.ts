@@ -1,10 +1,11 @@
 import { ITransport } from "./ITransport";
 import { IRequest } from "./IRequest";
-import { JanusSession, PluginHandle, Transaction } from "..";
+import { JanusSession, PluginHandle, Transaction } from "../index_browser";
 import superagent from "superagent";
 import { EventEmitter } from "events";
 import { IEventData } from "./IEventData";
-import bunyan from "bunyan";
+import { ILogger } from "../logger/ILogger";
+import { ILoggerFactory } from "../logger/ILoggerFactory";
 
 /**
  * RESTful interface to Janus API
@@ -21,7 +22,7 @@ import bunyan from "bunyan";
  * @extends {ITransport}
  */
 export class HTTPTransport extends ITransport {
-	private _logger = bunyan.createLogger({ name: "JanusClient", level: "info" });
+	private _logger : ILogger;
 
 	private _eventEmitter = new EventEmitter();
 
@@ -64,8 +65,9 @@ export class HTTPTransport extends ITransport {
 	 * @param {boolean} isAdmin should always be true for Admin API
 	 * @memberof HTTPTransport
 	 */
-	public constructor(private url: string, private admin_secret: string, private isAdmin: boolean) {
+	public constructor(loggerFactory: ILoggerFactory, private url: string, private admin_secret: string, private isAdmin: boolean) {
 		super();
+		this._logger = loggerFactory.create("JanusClient");
 	}
 	/**
 	 * True if this transport is pointing to Admin API

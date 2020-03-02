@@ -11,9 +11,10 @@ import { PluginHandle } from "../abstractions/PluginHandle";
 import { Transaction } from "../abstractions/Transaction";
 import { JanusSession } from "../abstractions/JanusSession";
 
-import bunyan from "bunyan";
 import { IEventData } from "./IEventData";
 import { IDetachedEvent } from "./IDetachedEvent";
+import { ILogger } from "../logger/ILogger";
+import { ILoggerFactory } from "../logger/ILoggerFactory";
 
 /**
  * WebSocket Transport for Janus API
@@ -23,8 +24,7 @@ import { IDetachedEvent } from "./IDetachedEvent";
  * @extends {ITransport}
  */
 export class WebSocketTransport extends ITransport {
-	private _logger = bunyan.createLogger({ name: "WebSocketTransport", level: "info" });
-	// private _logger = bunyan.createLogger({ name: "WebSocketTransport", level: "trace" });
+	private _logger :ILogger;
 
 	private _janus_websocket_url: string;
 	private _janus_protocol: string;
@@ -54,8 +54,9 @@ export class WebSocketTransport extends ITransport {
 	 * @param {string} janus_protocol Janus Protocol to use, could be 'janus-admin-protocol' or 'janus-protocol'
 	 * @memberof WebSocketTransport
 	 */
-	constructor(janus_websocket_url?: string, janus_protocol?: string) {
+	constructor(loggerFactory:ILoggerFactory,janus_websocket_url?: string, janus_protocol?: string) {
 		super();
+		this._logger = loggerFactory.create("WebSocketTransport");
 
 		this._janus_websocket_url = janus_websocket_url || "ws://localhost:8188";
 		this._janus_protocol = janus_protocol || "janus-protocol";

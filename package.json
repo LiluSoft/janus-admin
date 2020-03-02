@@ -12,6 +12,7 @@
     "@types/superagent": "^4.1.7",
     "@types/websocket": "0.0.40",
     "amqplib": "^0.5.5",
+    "axios": "^0.19.2",
     "bunyan": "^1.8.12",
     "chai-subset": "^1.6.0",
     "mqtt": "^3.0.0",
@@ -23,13 +24,22 @@
   },
   "devDependencies": {
     "@types/chai": "^4.1.6",
+    "@types/jquery": "^3.3.33",
     "@types/mocha": "^5.2.5",
+    "browserify": "^16.5.0",
     "chai": "^4.2.0",
+    "gulp": "^4.0.2",
+    "gulp-browserify": "^0.5.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-sourcemaps": "^2.6.5",
+    "gulp-typescript": "^6.0.0-alpha.1",
     "mocha": "^5.2.0",
     "nyc": "^15.0.0",
     "rimraf": "^3.0.2",
+    "tsify": "^4.0.1",
     "tslint-no-unused-expression-chai": "^0.1.4",
-    "typedoc": "^0.16.10"
+    "typedoc": "^0.16.10",
+    "vinyl-source-stream": "^2.0.0"
   },
   "scripts": {
     "lint": "tslint --project .",
@@ -44,7 +54,8 @@
     "doc": "rimraf ./docs/html && typedoc --tsconfig tsconfig.json",
     "doc-markdown": "rimraf ./docs/html && typedoc --tsconfig tsconfig.json --theme markdown",
     "coverage": "rimraf ./coverage && nyc mocha -r ts-node/register -r source-map-support/register --ui bdd tests/**/*.spec.ts",
-    "publish-now": "npm publish --access public"
+    "publish-now": "npm publish --access public",
+    "examples": "gulp --gulpfile examples/gulpfile.js"
   },
   "author": "Dror Gluska <drorgl@yahoo.com>",
   "license": "AGPL-3.0"

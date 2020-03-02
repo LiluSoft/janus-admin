@@ -1,4 +1,4 @@
-import * as crypto from "crypto";
+// import * as crypto from "crypto";
 
 const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -29,7 +29,8 @@ export class Transaction {
 
 	private generate_random_token(len: number) {
 		let value = "";
-		const randomBytes = crypto.randomBytes(len);
+		const randomBytes = [...Array(len)].map(v =>Math.random() * 0xFFFFF << 0);
+		// crypto.randomBytes(len);
 		for (let i = 0; i < len; i++) {
 			value = value + possible[randomBytes[i] % possible.length];
 		}

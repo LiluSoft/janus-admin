@@ -2,16 +2,17 @@ import { ITransport } from "../transports/ITransport";
 import { IRequest } from "../transports/IRequest";
 import { IResponse } from "../transports/IResponse";
 import { ISessionResponse } from "../abstractions/ISessionResponse";
-import { PluginHandle, JanusSession, IRequestWithBody, IVideoRoomResponse, JanusError } from "..";
+import { PluginHandle, JanusSession, IRequestWithBody, IVideoRoomResponse, JanusError } from "../index_browser";
 import { IPluginHandleResponse } from "../abstractions/IHandleResponse";
 import { IRequestWithToken } from "../transports/IRequestWithToken";
-import bunyan from "bunyan";
 import { IPluginDataResponse } from "../abstractions/IPluginDataResponse";
 import { IRequestWithJSEP } from "../transports/IRequestWithJSEP";
 import { ITrickleRequest } from "./models/ITrickleRequest";
 import { IBaseRequest } from "../transports/IBaseRequest";
 import { IMessageResponse } from "./models/IMessageResponse";
-import { IErrorResponse, IMessageRequest } from "./models";
+import { IMessageRequest } from "./models";
+import { ILogger } from "../logger/ILogger";
+import { ILoggerFactory } from "../logger/index_server";
 
 /**
  * Janus Client
@@ -20,7 +21,7 @@ import { IErrorResponse, IMessageRequest } from "./models";
  * @class JanusClient
  */
 export class JanusClient {
-	private _logger = bunyan.createLogger({ name: "JanusClient", level: "info" });
+	private _logger : ILogger;
 
 
 	/**
@@ -28,7 +29,9 @@ export class JanusClient {
 	 * @param {ITransport} transport Transport for communicating with Janus gateway
 	 * @memberof JanusClient
 	 */
-	constructor(public readonly transport: ITransport, public readonly token?: string) {
+	constructor(public readonly loggerFactory : ILoggerFactory, public readonly transport: ITransport, public readonly token?: string) {
+		this._logger = loggerFactory.create("JanusClient");
+
 		if (this.transport.isAdminEndpoint()) {
 			this._logger.error("Transport must be connected to Client endpoint");
 			throw new Error("Transport must be connected to Client endpoint");
