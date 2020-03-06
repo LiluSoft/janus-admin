@@ -4,6 +4,7 @@ import { JanusSession, PluginHandle } from "../abstractions";
 import { IEventData } from "./IEventData";
 import axios from "axios";
 import { ILoggerFactory } from "../logger/ILoggerFactory";
+import { IEvent } from "./IEvent";
 
 
 
@@ -25,7 +26,7 @@ export class HTTPBrowserTransport extends ITransport {
 	public waitForReady(): Promise<boolean> {
 		throw new Error("Method not implemented.");
 	}
-	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEventData<T>) => void): void {
+	public subscribe_plugin_events<T>(session: JanusSession,  callback: (event: IEvent) => void): void {
 		throw new Error("Method not implemented.");
 	}
 

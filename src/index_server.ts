@@ -1,6 +1,6 @@
 export * from "./abstractions";
 export * from "./admin";
-export * from "./client";
+export * from "./client/index_server";
 export * from "./transports/index_server";
 export * from "./events";
 export * from "./plugins";

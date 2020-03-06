@@ -2,6 +2,7 @@ import { IRequest } from "./IRequest";
 import { JanusSession } from "../abstractions/JanusSession";
 import { PluginHandle } from "../abstractions/PluginHandle";
 import { IEventData } from "./IEventData";
+import { IEvent } from "./IEvent";
 
 /**
  * Transport Interface for Janus API
@@ -45,5 +46,5 @@ export abstract class ITransport {
 	 */
 	public abstract waitForReady(): Promise<boolean>;
 
-	public abstract subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEventData<T>) => void): void;
+	public abstract subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEvent) => void): void;
 }

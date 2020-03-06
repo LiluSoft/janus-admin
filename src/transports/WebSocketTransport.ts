@@ -15,6 +15,7 @@ import { IEventData } from "./IEventData";
 import { IDetachedEvent } from "./IDetachedEvent";
 import { ILogger } from "../logger/ILogger";
 import { ILoggerFactory } from "../logger/ILoggerFactory";
+import { IEvent } from "./IEvent";
 
 /**
  * WebSocket Transport for Janus API
@@ -210,7 +211,7 @@ export class WebSocketTransport extends ITransport {
 
 	}
 
-	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEventData<T>) => void) {
+	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEvent) => void) {
 		this.globalEmitter.on("event", callback);
 	}
 

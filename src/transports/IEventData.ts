@@ -1,8 +1,9 @@
-export interface IEventData<T> {
-	"janus": "event";
+import { IEvent } from "./IEvent";
+
+export interface IEventData<T> extends IEvent{
 	"session_id": number;
 	"transaction": string;
-	"sender": number;
+
 	"plugindata": {
 		"plugin": string;
 		"data": T;

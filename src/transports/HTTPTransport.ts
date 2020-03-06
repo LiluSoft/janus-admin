@@ -6,6 +6,7 @@ import { EventEmitter } from "events";
 import { IEventData } from "./IEventData";
 import { ILogger } from "../logger/ILogger";
 import { ILoggerFactory } from "../logger/ILoggerFactory";
+import { IEvent } from "./IEvent";
 
 /**
  * RESTful interface to Janus API
@@ -29,7 +30,7 @@ export class HTTPTransport extends ITransport {
 	// for each session, keep a long poll, for each event, pass on to "event"
 	private _sessionTimers: { [session_id: number]: NodeJS.Timeout } = {};
 
-	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEventData<T>) => void): void {
+	public subscribe_plugin_events<T>(session: JanusSession,  callback: (event: IEvent) => void): void {
 		if (!this._sessionTimers[session.session_id]) {
 			this._trackSession(session);
 		}

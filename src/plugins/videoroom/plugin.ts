@@ -138,7 +138,7 @@ export class VideoRoomPlugin {
 	 */
 	public async dispose() {
 		const destroyedHandle = await this._client.DetachHandle(this.handle);
-		const destroyedSession = await this._client.DestroySession(this._session);
+		const destroyedSession = await this._client.DestroySession(this.session);
 		this._logger.debug("destroyed", destroyedHandle, destroyedSession);
 	}
 
@@ -147,10 +147,10 @@ export class VideoRoomPlugin {
 	 *
 	 * @param _transport transport to use
 	 * @param _client janus client to use
-	 * @param _session janus session to use
+	 * @param session janus session to use
 	 * @param handle  plugin handle to use
 	 */
-	private constructor(private _loggerFactory: ILoggerFactory, private _client: JanusClient, private _session: JanusSession, public readonly handle: PluginHandle) {
+	private constructor(private _loggerFactory: ILoggerFactory, private _client: JanusClient, public readonly session: JanusSession, public readonly handle: PluginHandle) {
 		this._logger = _loggerFactory.create("VideoRoom");
 	}
 

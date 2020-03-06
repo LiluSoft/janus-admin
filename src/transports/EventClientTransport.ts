@@ -12,12 +12,13 @@ import { Transaction, JanusError } from "../index_browser";
 import { IEventClient } from "../events/IEventClient";
 import { ILogger } from "../logger/ILogger";
 import { ILoggerFactory } from "../logger/ILoggerFactory";
+import { IEvent } from "./IEvent";
 
 
 export class EventClientTransport extends ITransport {
 	private _logger: ILogger;
 
-	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: import("./IEventData").IEventData<T>) => void): void {
+	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEvent) => void): void {
 		throw new Error("Method not implemented.");
 	}
 
