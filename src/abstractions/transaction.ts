@@ -23,8 +23,8 @@ export class Transaction {
 	 * Creates an instance of Transaction and initializes a random transactionId
 	 * @memberof Transaction
 	 */
-	constructor() {
-		this._id = this.generate_random_token(10);
+	constructor(len: number = 10) {
+		this._id = this.generate_random_token(len);
 	}
 
 	private generate_random_token(len: number) {

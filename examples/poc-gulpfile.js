@@ -7,7 +7,9 @@ const rimraf = require("rimraf");
 const browserify = require('browserify');
 const tsify = require('tsify');
 const source = require('vinyl-source-stream');
-
+const globalShim = require('browserify-global-shim');
+const browserifyShim = require('browserify-shim');
+const exposify = require('exposify');
 
 // typescript
 const ts = require('gulp-typescript');
@@ -16,26 +18,62 @@ const ts = require('gulp-typescript');
 const jsDest = 'examples/js';
 
 // clean the contents of the distribution directory
-gulp.task('clean', function(done) {
-    rimraf('examples/js/**/*',done);
+gulp.task('clean', function (done) {
+	rimraf('examples/js/**/*', done);
 });
 
 
 var config = {
 	publicPath: __dirname + '/js',
 	app: {
-		path: __dirname ,
-		main: 'videoroom.ts',
-		result: 'application.js'
+		path: __dirname,
+		main: 'poc.ts',
+		result: 'poc.js'
 	}
 };
 
 
-gulp.task('compile-js', function() {
-	var bundler = browserify({basedir: config.app.path})
-		.add(config.app.main)
-		.plugin(tsify);
+gulp.task('compile-js', function () {
+	// let globalShims = globalShim.configure({
+	// 	"jquery":"$"
+	// });
+
+
+	//console.log(globalShims);
+	//, debug:true
+	//basedir: config.app.path
+
+	exposify.config = {
+		"jquery": "$"
+	}
+	var b = browserify({ basedir: config.app.path });
+	//b = b.transform(exposify);
+	//b = b.transform('exposify', {filePattern:  /\.ts$/, expose: { jquery: '$' } });
+	//b.exclude("jquery")
+	//b = b.external(["jquery"]);
+
+	//{ global: true },
+	b = b.add(config.app.main);
 	
+
+	// b = b.transform('browserify-shim', {
+	// 	global: true
+	// });
+	
+
+	// b = b.add(browserifyShim(config.app.main, {
+	// 	"jquery":"$"
+	// }));
+
+	// //b = b.add(config.app.main)
+
+
+	let bundler = b
+		.plugin(tsify, {
+			project: __dirname
+		});
+	bundler = bundler.transform( { global: true },browserifyShim);
+
 	return bundler.bundle()
 		.pipe(source(config.app.result))
 		.pipe(gulp.dest(config.publicPath));
@@ -116,4 +154,4 @@ gulp.task('compile-js', function() {
 // });
 
 // gulp.task('default',gulp.series(['clean', 'ts']));
-gulp.task('default',gulp.series(['clean', 'compile-js']));
+gulp.task('default', gulp.series(['clean', 'compile-js']));

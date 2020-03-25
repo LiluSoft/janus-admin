@@ -31,6 +31,9 @@
         "src/**/*",
         "test/**/*"
     ],
+    "files": [
+        "node_modules/@types/jquery.blockui/index.d.ts"
+    ],
     "typedocOptions": {
         "mode": "file",
         "out": "docs/html",

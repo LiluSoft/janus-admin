@@ -1,4 +1,6 @@
 import { ILogger } from "./ILogger";
+import { BrowserLoggerObject } from "./BrowserLoggerObject";
+import { ColorGenerator } from "./ColorGenerator";
 
 export class BrowserLogger implements ILogger {
 	trace(format: any, ...params: any[]): void {
@@ -21,10 +23,6 @@ export class BrowserLogger implements ILogger {
 	}
 	private readonly _levels = ["trace", "debug", "info", "warn", "error", "fatal"];
 
-	private mockConsole: Console;
-
-
-
 	private dummy() {
 		// Do Nothing
 	}
@@ -34,29 +32,23 @@ export class BrowserLogger implements ILogger {
 	}
 
 	public getColorStyle(color: string) {
-		return `color: white; background-color: ${color}; padding: 2px 6px; border-radius: 2px; font-size: 10px`;
+		const colorGen = new ColorGenerator();
+		color = colorGen.colourNameToHex(color);
+		return `color: ${colorGen.getContrastYIQ(color)}; background-color: ${color}; padding: 2px 4px; border-radius: 2px; font-size: 10px`;
 	}
-	// tslint:disable-next-line:ban-types
-	private getSingleLogger(initiator: string, style: string, fn: Function, level: string) {
-		return (...args1: any[]) => {
-			if (this._levels.indexOf(this.level) > this._levels.indexOf(level)) {
-				return this.dummy;
-			}
-			const args = Array.prototype.slice.call(args1);
-			let params = [this.mockConsole, `${(new Date()).toISOString()}[${this.getLevel(level)}]%c[${initiator}]`, style];
-			params = params.concat(args);
-			return Function.prototype.bind.apply(fn, params);
-		};
+
+	public getColorByHash(value:string){
+		const colorGen = new ColorGenerator();
+		const hashColor = "#" + colorGen.hashFnv32a(value,true,0);
+		return `color: ${hashColor}`;
 	}
 
 	private constructor(private name: string, private level: "trace" | "debug" | "info" | "warn" | "error" | "fatal") {
-		this.mockConsole = console;
-
-		this.trace = this.getSingleLogger(name, this.getColorStyle("blue"), this.mockConsole.log, "trace");
-		this.debug = this.getSingleLogger(name, this.getColorStyle("gray"), this.mockConsole.log, "debug");
-		this.info = this.getSingleLogger(name, this.getColorStyle("white"), this.mockConsole.log, "info");
-		this.warn = this.getSingleLogger(name, this.getColorStyle("pink"), this.mockConsole.warn, "warn");
-		this.error = this.getSingleLogger(name, this.getColorStyle("red"), this.mockConsole.error, "error");
+		this.trace = console.log.bind(window.console, `%s%c[%s]%c[%s]`, BrowserLoggerObject(),this.getColorByHash(this.name), this.name, this.getColorStyle("blue"), "TRACE");
+		this.debug = console.log.bind(window.console, `%s%c[%s]%c[%s]`, BrowserLoggerObject(),this.getColorByHash(this.name), this.name, this.getColorStyle("gray"), "DEBUG");
+		this.info = console.log.bind(window.console, `%s%c[%s]%c[%s]`, BrowserLoggerObject(),this.getColorByHash(this.name), this.name, this.getColorStyle("black"), "INFO");
+		this.warn = console.log.bind(window.console, `%s%c[%s]%c[%s]`, BrowserLoggerObject(),this.getColorByHash(this.name), this.name, this.getColorStyle("pink"), "WARN");
+		this.error = console.log.bind(window.console, `%s%c[%s]%c[%s]`, BrowserLoggerObject(),this.getColorByHash(this.name), this.name, this.getColorStyle("red"), "ERROR");
 	}
 	public static create(name: string, level: "trace" | "debug" | "info" | "warn" | "error" | "fatal"): ILogger {
 		const newLogger = new BrowserLogger(name, level);

@@ -46,5 +46,5 @@ export abstract class ITransport {
 	 */
 	public abstract waitForReady(): Promise<boolean>;
 
-	public abstract subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEvent) => void): void;
+	public abstract subscribe_plugin_events<T>(callback: (event: IEvent) => void, session?: JanusSession): ()=>void;
 }

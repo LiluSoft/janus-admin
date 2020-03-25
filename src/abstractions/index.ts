@@ -4,3 +4,4 @@ export * from "./IPluginDataResponse";
 export * from "./ISessionResponse";
 export * from "./JanusSession";
 export * from "./Transaction";
+export * from "./JanusSessionEventHandler";

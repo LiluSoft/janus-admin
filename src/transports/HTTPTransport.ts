@@ -1,12 +1,14 @@
 import { ITransport } from "./ITransport";
 import { IRequest } from "./IRequest";
-import { JanusSession, PluginHandle, Transaction } from "../index_browser";
 import superagent from "superagent";
 import { EventEmitter } from "events";
 import { IEventData } from "./IEventData";
 import { ILogger } from "../logger/ILogger";
 import { ILoggerFactory } from "../logger/ILoggerFactory";
 import { IEvent } from "./IEvent";
+import { JanusSession, PluginHandle, Transaction } from "../abstractions";
+import { JanusError } from "./JanusError";
+import { DeferredPromise } from "./DeferredPromise";
 
 /**
  * RESTful interface to Janus API
@@ -23,26 +25,55 @@ import { IEvent } from "./IEvent";
  * @extends {ITransport}
  */
 export class HTTPTransport extends ITransport {
-	private _logger : ILogger;
+	private _logger: ILogger;
 
 	private _eventEmitter = new EventEmitter();
 
 	// for each session, keep a long poll, for each event, pass on to "event"
 	private _sessionTimers: { [session_id: number]: NodeJS.Timeout } = {};
 
-	public subscribe_plugin_events<T>(session: JanusSession,  callback: (event: IEvent) => void): void {
-		if (!this._sessionTimers[session.session_id]) {
-			this._trackSession(session);
+	private _sessionTrackingStatistics: {[session_id:number]: {number_of_errors: number}} = {};
+
+	private _transactions: { [transaction_id: string]: DeferredPromise<unknown> } = {};
+
+	public subscribe_plugin_events<T>(callback: (event: IEvent) => void, session?: JanusSession): () => void {
+		if (session) {
+			if (!this._sessionTimers[session.session_id]) {
+				this._trackSession(session);
+			}
 		}
+
 		this._eventEmitter.on("event", callback);
+
+		return () => {
+			this._eventEmitter.removeListener("event", callback);
+		};
 	}
 
+
 	private _trackSession(session: JanusSession) {
+		this._logger.debug("Tracking Session", session);
 		const trackTimer = async () => {
-			const result = await superagent.get(this.url + `/${session.session_id}?maxev=5`).send();
-			const events = result.body as IEventData<void>[];
-			for (const event of events) {
-				this._longPollHandler(event);
+			try {
+				const result = await superagent.get(this.url + `/${session.session_id}?maxev=5`).send();
+				const events = result.body as IEventData<void>[];
+				for (const event of events) {
+					this._longPollHandler(event);
+				}
+			} catch (error) {
+				this._logger.error("Unable to Track Session", session, error);
+
+				if (!this._sessionTrackingStatistics[session.session_id]){
+					this._sessionTrackingStatistics[session.session_id] = {number_of_errors: 0};
+				}
+
+				this._sessionTrackingStatistics[session.session_id].number_of_errors++;
+
+				if (this._sessionTrackingStatistics[session.session_id].number_of_errors > 3){
+					this._logger.fatal("Unable to Track Session too many times, stopping to track",session);
+					return;
+				}
+				// todo: add event for handling errors
 			}
 
 			this._sessionTimers[session.session_id] = setTimeout(trackTimer, 0);
@@ -51,11 +82,22 @@ export class HTTPTransport extends ITransport {
 	}
 
 	private _longPollHandler<T>(data: IEventData<T>) {
-		if (data.janus === "event") {
-			this._logger.debug("janus event", data);
-			this._eventEmitter.emit("event", data);
-			return;
+		this._logger.trace("long poll data", data);
+
+		// handle deferred transactions
+		if (data.transaction) {
+			const deferredPromise = this._transactions[data.transaction];
+			if (!deferredPromise) {
+				// unknown transaction, dispose
+				this._logger.warn("unknown transaction", data.transaction);
+			} else {
+				this._logger.trace("resolving transaction", data.transaction);
+				deferredPromise.resolve(data);
+			}
 		}
+
+		this._logger.debug("Dispatching Event", data);
+		this._eventEmitter.emit("event", data);
 	}
 
 	/**
@@ -68,7 +110,8 @@ export class HTTPTransport extends ITransport {
 	 */
 	public constructor(loggerFactory: ILoggerFactory, private url: string, private admin_secret: string, private isAdmin: boolean) {
 		super();
-		this._logger = loggerFactory.create("JanusClient");
+		this._logger = loggerFactory.create("HTTPTransport");
+		this._logger.trace("Initializing", arguments);
 	}
 	/**
 	 * True if this transport is pointing to Admin API
@@ -105,7 +148,26 @@ export class HTTPTransport extends ITransport {
 			req.handle_id = pluginHandle.handle_id;
 		}
 
-		return await (await superagent.post(this.url).send(req)).body;
+		try {
+			const body = await (await superagent.post(this.url).send(req)).body;
+			if (body.janus === "ack") {
+				const deferredPromise = await DeferredPromise.create<ResponseT>(transaction);
+				deferredPromise.transaction = transaction;
+
+				this._transactions[transaction.getTransactionId()] = deferredPromise;
+
+				return deferredPromise.promise;
+			}
+			if (body.janus === "error" && body.error) {
+				throw new JanusError(body.error.code, body.error.reason);
+			}
+
+			return body;
+		}
+		catch (error) {
+			this._logger.error("Unable to request", req, session, pluginHandle, error);
+			throw error;
+		}
 	}
 	/**
 	 * Cleanup

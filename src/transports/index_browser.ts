@@ -7,3 +7,4 @@ export * from "./IResponse";
 export * from "./ITransport";
 export * from "./JanusError";
 export * from "./HTTPBrowserTransport";
+export * from "./HTTPTransport";

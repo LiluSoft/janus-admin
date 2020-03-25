@@ -1,18 +1,16 @@
 import { ITransport } from "./ITransport";
 import { IRequest } from "./IRequest";
 
-import { client as wsclient, connection as wsconnection } from "websocket";
+import websocket from "websocket";
+
+
 import { EventEmitter } from "events";
 import { DeferredPromise } from "./DeferredPromise";
 import { JanusError } from "./JanusError";
-import { IResponse } from "./IResponse";
-import { ISessionResponse } from "../abstractions/ISessionResponse";
 import { PluginHandle } from "../abstractions/PluginHandle";
 import { Transaction } from "../abstractions/Transaction";
 import { JanusSession } from "../abstractions/JanusSession";
 
-import { IEventData } from "./IEventData";
-import { IDetachedEvent } from "./IDetachedEvent";
 import { ILogger } from "../logger/ILogger";
 import { ILoggerFactory } from "../logger/ILoggerFactory";
 import { IEvent } from "./IEvent";
@@ -29,8 +27,8 @@ export class WebSocketTransport extends ITransport {
 
 	private _janus_websocket_url: string;
 	private _janus_protocol: string;
-	private _websocket: wsclient;
-	private _connection: wsconnection;
+	private _websocket: websocket.client;
+	private _connection: websocket.connection;
 
 	private _ready = false;
 	private _ready_promises: DeferredPromise<boolean>[] = [];
@@ -58,15 +56,16 @@ export class WebSocketTransport extends ITransport {
 	constructor(loggerFactory:ILoggerFactory,janus_websocket_url?: string, janus_protocol?: string) {
 		super();
 		this._logger = loggerFactory.create("WebSocketTransport");
+		this._logger.info("Initializing", arguments);
 
 		this._janus_websocket_url = janus_websocket_url || "ws://localhost:8188";
 		this._janus_protocol = janus_protocol || "janus-protocol";
 
-		this._websocket = new wsclient();
+		this._websocket = new websocket.client();
 		// this._websocket = new wsclient(this._janus_websocket_url, this._janus_protocol);
 
 
-		this._websocket.on("connectFailed", (error) => {
+		this._websocket.on("connectFailed", (error: Error) => {
 			this._logger.error("Connect Error: " + error.toString());
 		});
 
@@ -81,7 +80,7 @@ export class WebSocketTransport extends ITransport {
 			this._ready_promises = [];
 			// for each promise, resolve and delete
 
-			connection.on("error", (error) => {
+			connection.on("error", (error : Error) => {
 				this._logger.error("Connection Error: " + error.toString());
 				this.globalEmitter.emit("error", error);
 
@@ -157,7 +156,7 @@ export class WebSocketTransport extends ITransport {
 
 				if (!data.transaction) {
 					if (data.janus === "event") {
-						this._logger.debug("janus event", data);
+						this._logger.debug("Dispatching Event", data);
 						this.globalEmitter.emit("event", data);
 						return;
 					} else if (data.janus === "detached") {
@@ -211,13 +210,15 @@ export class WebSocketTransport extends ITransport {
 
 	}
 
-	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEvent) => void) {
+	public subscribe_plugin_events<T>(callback: (event: IEvent) => void, session?: JanusSession): ()=>void{
 		this.globalEmitter.on("event", callback);
+		return ()=>{
+			this.globalEmitter.removeListener("event", callback);
+		};
 	}
 
-	public subscribe_detached(callback: (event: IDetachedEvent) => void) {
-		this.globalEmitter.on("detached", callback);
-	}
+
+
 
 	/**
 	 * Waits for the Transport to be ready

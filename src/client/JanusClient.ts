@@ -2,7 +2,6 @@ import { ITransport } from "../transports/ITransport";
 import { IRequest } from "../transports/IRequest";
 import { IResponse } from "../transports/IResponse";
 import { ISessionResponse } from "../abstractions/ISessionResponse";
-import { PluginHandle, JanusSession, IRequestWithBody, IVideoRoomResponse, JanusError } from "../index_browser";
 import { IPluginHandleResponse } from "../abstractions/IHandleResponse";
 import { IRequestWithToken } from "../transports/IRequestWithToken";
 import { IPluginDataResponse } from "../abstractions/IPluginDataResponse";
@@ -13,6 +12,10 @@ import { IMessageResponse } from "./models/IMessageResponse";
 import { IMessageRequest } from "./models";
 import { ILogger } from "../logger/ILogger";
 import { ILoggerFactory } from "../logger/index_server";
+import { IEventData } from "../transports/IEventData";
+import { JanusSession, PluginHandle } from "../abstractions";
+import { JanusError } from "../transports/JanusError";
+import { IRequestWithBody } from "../transports/IRequestWithBody";
 
 /**
  * Janus Client
@@ -23,7 +26,6 @@ import { ILoggerFactory } from "../logger/index_server";
 export class JanusClient {
 	private _logger : ILogger;
 
-
 	/**
 	 * Creates an instance of JanusClient.
 	 * @param {ITransport} transport Transport for communicating with Janus gateway
@@ -31,18 +33,20 @@ export class JanusClient {
 	 */
 	constructor(public readonly loggerFactory : ILoggerFactory, public readonly transport: ITransport, public readonly token?: string) {
 		this._logger = loggerFactory.create("JanusClient");
+		this._logger.trace("Initializing",arguments);
 
 		if (this.transport.isAdminEndpoint()) {
 			this._logger.error("Transport must be connected to Client endpoint");
 			throw new Error("Transport must be connected to Client endpoint");
 		}
+
 	}
 
 	/**
 	 * create a new session
 	 */
 	public async CreateSession(): Promise<JanusSession> {
-		this._logger.debug("creating new session");
+		this._logger.trace("creating new session");
 		const req: IRequestWithToken = {
 			janus: "create"
 		};
@@ -55,7 +59,8 @@ export class JanusClient {
 		this._logger.debug("created new session", response.data);
 
 		if (response.data) {
-			return new JanusSession(response.data.id);
+			const session = new JanusSession(response.data.id);
+			return session;
 		} else {
 			throw new JanusError(-1, "Unable to create a new session");
 		}
@@ -70,7 +75,7 @@ export class JanusClient {
 	 * @memberof JanusClient
 	 */
 	public async DestroySession(session: JanusSession): Promise<boolean> {
-		this._logger.debug("destroying session", session);
+		this._logger.trace("destroying session", session);
 		const req: IRequestWithToken = {
 			janus: "destroy",
 		};
@@ -80,11 +85,16 @@ export class JanusClient {
 		}
 
 		const response = await this.transport.request<IResponse<void>>(req, session);
+
+		this._logger.debug("destroyed session", session, response);
+
 		return response.janus === "success";
 	}
 
 	/**
 	 * attach to a plugin within the context of a specific session
+	 *
+	 * a {{JanusSessionEventHandler}} Can be attached to the session to receive session events
 	 *
 	 * @param {JanusSession} session Janus Session
 	 * @param {string} plugin_id Plugin id, i.e. "janus.plugin.videoroom", "janus.plugin.streaming" etc'
@@ -92,7 +102,7 @@ export class JanusClient {
 	 * @memberof JanusClient
 	 */
 	public async CreateHandle(session: JanusSession, plugin_id: string): Promise<PluginHandle> {
-		this._logger.debug("attach", session, plugin_id);
+		this._logger.trace("attach", session, plugin_id);
 
 		const req: IRequestWithToken = {
 			janus: "attach",
@@ -104,6 +114,8 @@ export class JanusClient {
 
 
 		const response = await this.transport.request<IResponse<IPluginHandleResponse>>(req, session);
+
+		this._logger.debug("attached", session,plugin_id, response);
 
 		if (response.data) {
 			return new PluginHandle(response.data.id, session, plugin_id);
@@ -120,7 +132,7 @@ export class JanusClient {
 	 * @memberof JanusClient
 	 */
 	public async DetachHandle(handle: PluginHandle): Promise<boolean> {
-		this._logger.debug("detach", handle);
+		this._logger.trace("detach", handle);
 		const req: IRequestWithToken = {
 			janus: "detach",
 		};
@@ -130,6 +142,8 @@ export class JanusClient {
 
 
 		const response = await this.transport.request<IResponse<void>>(req, handle.session, handle);
+
+		this._logger.debug("detached", handle, response);
 
 		return response.janus === "success";
 	}
@@ -144,7 +158,7 @@ export class JanusClient {
 	 * @memberof JanusClient
 	 */
 	public async keepalive(session: JanusSession) {
-		this._logger.debug("keepalive");
+		this._logger.trace("keepalive");
 		const req: IRequestWithToken = {
 			janus: "keepalive",
 		};
@@ -154,6 +168,7 @@ export class JanusClient {
 
 
 		const response = await this.transport.request<IResponse<void>>(req, session);
+		this._logger.debug("keepalive", response);
 
 		return response.janus;
 	}
@@ -162,7 +177,7 @@ export class JanusClient {
 	 *  keeping the handle alive but want to hang up the associated PeerConnection
 	 */
 	public async hangup(handle: PluginHandle) {
-		this._logger.debug("hangup");
+		this._logger.trace("hangup", handle);
 		const req: IRequestWithToken = {
 			janus: "hangup",
 		};
@@ -173,18 +188,22 @@ export class JanusClient {
 
 		const response = await this.transport.request<IResponse<void>>(req, handle.session, handle);
 
+		this._logger.debug("hangup", handle, response);
+
 		return response.janus === "success";
 	}
 
 	/**
 	 * Claims a session
 	 *
+	 * a {{JanusSessionEventHandler}} Can be attached to the session to receive session events
+	 *
 	 * @param {JanusSession} session
 	 * @returns
 	 * @memberof JanusClient
 	 */
 	public async claim(session: JanusSession) {
-		this._logger.debug("claim");
+		this._logger.trace("claim", session);
 		const req: IRequestWithToken = {
 			janus: "claim",
 		};
@@ -193,6 +212,8 @@ export class JanusClient {
 		}
 
 		const response = await this.transport.request<IResponse<void>>(req, session);
+
+		this._logger.debug("claim", session, response);
 
 		return response.janus === "success";
 	}
@@ -212,9 +233,9 @@ export class JanusClient {
 	 * @memberof JanusClient
 	 */
 	public async message<TResult>(handle: PluginHandle, body: IMessageRequest, jsep?: any) {
-		this._logger.debug("message", handle, body);
+		this._logger.trace("message", handle, body);
 
-		const create_request: IRequestWithBody<IMessageRequest> & IRequestWithToken & IRequestWithJSEP = {
+		const message_request: IRequestWithBody<IMessageRequest> & IRequestWithToken & IRequestWithJSEP = {
 			janus: "message",
 			session_id: handle.session.session_id,
 			handle_id: handle.handle_id,
@@ -222,19 +243,21 @@ export class JanusClient {
 		};
 
 		if (jsep) {
-			create_request.jsep = jsep;
+			message_request.jsep = jsep;
 		}
 
 		if (this.token) {
-			create_request.token = this.token;
+			message_request.token = this.token;
 		}
 
-		const created_result = await this.transport.request<IMessageResponse<TResult>>(create_request, handle.session, handle);
+		const message_sent_result = await this.transport.request<IMessageResponse<TResult>>(message_request, handle.session, handle);
 
-		if (created_result.plugindata.data.error && created_result.plugindata.data.error_code) {
-			throw new JanusError(created_result.plugindata.data.error_code, created_result.plugindata.data.error);
+		this._logger.debug("message", handle, body, message_sent_result);
+
+		if (message_sent_result.plugindata && message_sent_result.plugindata.data.error && message_sent_result.plugindata.data.error_code) {
+			throw new JanusError(message_sent_result.plugindata.data.error_code, message_sent_result.plugindata.data.error);
 		}
-		return created_result;
+		return message_sent_result;
 	}
 
 	/**
@@ -248,7 +271,7 @@ export class JanusClient {
 	 * @memberof JanusClient
 	 */
 	public async trickle(req: ITrickleRequest, handle: PluginHandle) {
-		this._logger.debug("trickle");
+		this._logger.trace("trickle", req, handle);
 
 		const req_augmented: ITrickleRequest & IRequestWithToken = req;
 
@@ -258,6 +281,8 @@ export class JanusClient {
 
 
 		const response = await this.transport.request<IResponse<void>>(req_augmented, handle.session, handle);
+
+		this._logger.debug("trickle", req, handle, response);
 
 		return response.janus;
 	}

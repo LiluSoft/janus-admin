@@ -54,6 +54,14 @@ import { IPausedEvent } from "./models/events/IPausedEvent";
 import { ILeftEvent } from "./models/events/ILeftEvent";
 import { ILogger } from "../../logger/ILogger";
 import { ILoggerFactory } from "../../logger/index_server";
+import { IJoinedEvent } from "./models/events/IJoinedEvent";
+import { IPublishersEvent } from "./models/events/IPublishersEvent";
+import { IJSEPEvent } from "./models/events/IJSEPEvent";
+import { ITemporalSubstreamEvent } from "./models/events/ITemporalSubstreamEvent";
+import { ITrickleRequest } from "../../client/models/ITrickleRequest";
+import { IJoinSubscriberResponse } from "./models/IJoinSubscriberResponse";
+import { IStartRequest } from "./models/IStartRequest";
+import { IStartResponse } from "./models/IStartResponse";
 
 /**
  * VideoRoom SFU Plugin
@@ -64,6 +72,8 @@ import { ILoggerFactory } from "../../logger/index_server";
 export class VideoRoomPlugin {
 	private _logger: ILogger;
 	private _eventEmitter = new EventEmitter();
+
+	private _unregister_callback: (() => void) | undefined;
 
 	/**
 	 * Attach a new VideoRoomPlugin to Janus Client
@@ -81,55 +91,109 @@ export class VideoRoomPlugin {
 		const handle = await client.CreateHandle(session, "janus.plugin.videoroom");
 
 		const plugin = new VideoRoomPlugin(client.loggerFactory, client, session, handle);
-		client.transport.subscribe_plugin_events(session, (event) => {
-			plugin.handle_event(event);
-		});
+
+
+		if (plugin._unregister_callback) {
+			plugin._logger.trace("Unregister existing plugin events listener");
+			plugin._unregister_callback();
+			plugin._unregister_callback = undefined;
+		}
+		plugin._logger.trace("Registering plugin events listener");
+		plugin._unregister_callback = client.transport.subscribe_plugin_events((event) => {
+			plugin.handle_event(event as IEventData<unknown>);
+		}, session);
+
 		return plugin;
 	}
 
-	private handle_event<T>(event: IEventData<T | IAudioLevelEvent | ILeavingEvent | IStartedEvent | IPausedEvent | ISwitchedEvent | ILeftEvent>) {
-		console.log(event);
-		const videoroom_event = (event.plugindata.data) ? (event.plugindata.data as IVideoRoomEvent).videoroom : undefined;
+	private emitEvent(event: string | symbol, ...args: any[]) {
+		// should be emitted in the next cycle to allow subscribers to complete
+		setTimeout(() => {
+			if (this._eventEmitter.listenerCount(event) > 0) {
+				this._logger.trace("raising event", event, ...args);
+				this._eventEmitter.emit(event, ...args);
+			} else {
+				this._logger.trace("no listeners to", event, ...args);
+			}
+		}, 0);
+	}
+
+	private handle_event<T>(event: IEventData<T | IAudioLevelEvent | ILeavingEvent | IStartedEvent | IPausedEvent | ISwitchedEvent | ILeftEvent | IJoinedEvent>) {
+		if (event.session_id !== this.session.session_id) {
+			this._logger.trace("Incoming Event", event.session_id, "not for this session", this.session.session_id);
+			return;
+		}
+		this._logger.trace("Incoming Event", event);
+		const videoroom_event = (event.plugindata && event.plugindata.data) ? (event.plugindata.data as IVideoRoomEvent).videoroom : undefined;
 		switch (videoroom_event) {
 			case "talking":
-				this._eventEmitter.emit("audiolevel_event", event);
+				this.emitEvent("audiolevel_event", event);
 				break;
 			case "stopped-talking":
-				this._eventEmitter.emit("audiolevel_event", event);
+				this.emitEvent("audiolevel_event", event);
 				break;
 			case "attached":
-				this._eventEmitter.emit("attached", event);
+				this.emitEvent("attached", event);
+				break;
+			case "joined":
+				this.emitEvent("joined", event);
+				break;
+			case "destroyed":
+				this.emitEvent("destroyed", event);
 				break;
 		}
 
-		const leaving_event = (event.plugindata.data) ? (event.plugindata.data as ILeavingEvent).leaving : undefined;
-		if (leaving_event) {
-			this._eventEmitter.emit("leaving", event);
+		if (event.plugindata) {
+
+
+
+			const leaving_event = (event.plugindata.data) ? (event.plugindata.data as ILeavingEvent).leaving : undefined;
+			if (leaving_event) {
+				this.emitEvent("leaving", event);
+			}
+
+			const unpublished_event = (event.plugindata.data) ? (event.plugindata.data as IUnpublishedEvent).unpublished : undefined;
+			if (unpublished_event) {
+				this.emitEvent("unpublished", event);
+			}
+
+			const started_event = (event.plugindata.data) ? (event.plugindata.data as IStartedEvent).started : undefined;
+			if (started_event) {
+				this.emitEvent("started", event);
+			}
+
+			const paused_event = (event.plugindata.data) ? (event.plugindata.data as IPausedEvent).paused : undefined;
+			if (paused_event) {
+				this.emitEvent("paused", event);
+			}
+
+			const switched_event = (event.plugindata.data) ? (event.plugindata.data as ISwitchedEvent).switched : undefined;
+			if (switched_event) {
+				this.emitEvent("switched", event);
+			}
+
+			const left_event = (event.plugindata.data) ? (event.plugindata.data as ILeftEvent).left : undefined;
+			if (left_event) {
+				this.emitEvent("left", event);
+			}
+
+			const publishers_event = (event.plugindata.data) ? (event.plugindata.data as IPublishersEvent).publishers : undefined;
+			if (publishers_event) {
+				this.emitEvent("publishers", event);
+			}
+
+			const substream_event = (event.plugindata.data) ? (event.plugindata.data as ITemporalSubstreamEvent).substream : undefined;
+			const temporal_event = (event.plugindata.data) ? (event.plugindata.data as ITemporalSubstreamEvent).temporal : undefined;
+			if (temporal_event || substream_event) {
+				this.emitEvent("temporal_substream", event);
+			}
+
 		}
 
-		const unpublished_event = (event.plugindata.data) ? (event.plugindata.data as IUnpublishedEvent).unpublished : undefined;
-		if (unpublished_event) {
-			this._eventEmitter.emit("unpublished", event);
-		}
+		const jsep_event = (event.jsep) ? (event.jsep) : undefined;
+		if (jsep_event) {
 
-		const started_event = (event.plugindata.data) ? (event.plugindata.data as IStartedEvent).started : undefined;
-		if (started_event) {
-			this._eventEmitter.emit("started", event);
-		}
-
-		const paused_event = (event.plugindata.data) ? (event.plugindata.data as IPausedEvent).paused : undefined;
-		if (paused_event) {
-			this._eventEmitter.emit("paused", event);
-		}
-
-		const switched_event = (event.plugindata.data) ? (event.plugindata.data as ISwitchedEvent).switched : undefined;
-		if (switched_event) {
-			this._eventEmitter.emit("switched", event);
-		}
-
-		const left_event = (event.plugindata.data) ? (event.plugindata.data as ILeftEvent).left : undefined;
-		if (left_event) {
-			this._eventEmitter.emit("left", event);
+			this.emitEvent("jsep", event);
 		}
 	}
 
@@ -137,6 +201,10 @@ export class VideoRoomPlugin {
 	 * Cleanup VideoRoomPlugin
 	 */
 	public async dispose() {
+		if (this._unregister_callback) {
+			this._unregister_callback();
+			this._unregister_callback = undefined;
+		}
 		const destroyedHandle = await this._client.DetachHandle(this.handle);
 		const destroyedSession = await this._client.DestroySession(this.session);
 		this._logger.debug("destroyed", destroyedHandle, destroyedSession);
@@ -170,9 +238,10 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async create(req: ICreateRequest): Promise<ICreatedResponse> {
-		this._logger.debug("create", req);
+		this._logger.trace("create", req);
 
 		const created_result = await this._client.message<IVideoRoomResponse<ICreatedResponse>>(this.handle, req);
+		this._logger.debug("created",req, created_result);
 		return created_result.plugindata.data;
 	}
 
@@ -193,9 +262,10 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async edit(req: IEditRequest): Promise<IEditedResponse> {
-		this._logger.debug("edit", req);
+		this._logger.trace("edit", req);
 
 		const edit_result = await this._client.message<IVideoRoomResponse<IEditedResponse>>(this.handle, req);
+		this._logger.debug("edited", req, edit_result);
 
 		return edit_result.plugindata.data;
 	}
@@ -218,9 +288,10 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async destroy(req: IDestroyRequest): Promise<IDestroyedResponse> {
-		this._logger.debug("destroy", req);
+		this._logger.trace("destroy", req);
 
 		const destroy_result = await this._client.message<IVideoRoomResponse<IDestroyedResponse>>(this.handle, req);
+		this._logger.debug("destroyed", req, destroy_result);
 
 		return destroy_result.plugindata.data;
 	}
@@ -242,9 +313,10 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async exists(req: IExistsRequest): Promise<IExistsResponse> {
-		this._logger.debug("exists", req);
+		this._logger.trace("exists", req);
 
 		const exists_result = await this._client.message<IVideoRoomResponse<IExistsResponse>>(this.handle, req);
+		this._logger.debug("exists", req, exists_result);
 
 		return exists_result.plugindata.data;
 	}
@@ -268,9 +340,10 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async allowed(req: IAllowedRequest): Promise<IAllowedResponse> {
-		this._logger.debug("allowed", req);
+		this._logger.trace("allowed", req);
 
 		const exists_result = await this._client.message<IVideoRoomResponse<IAllowedResponse>>(this.handle, req);
+		this._logger.debug("allowed", req, exists_result);
 
 		return exists_result.plugindata.data;
 	}
@@ -296,11 +369,13 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async kick(req: IKickRequest): Promise<ISuccessResponse> {
-		this._logger.debug("kick", req);
+		this._logger.trace("kick", req);
 
-		const exists_result = await this._client.message<IVideoRoomResponse<ISuccessResponse>>(this.handle, req);
+		const kick_result = await this._client.message<IVideoRoomResponse<ISuccessResponse>>(this.handle, req);
 
-		return exists_result.plugindata.data;
+		this._logger.debug("kick", req, kick_result);
+
+		return kick_result.plugindata.data;
 	}
 
 	/**
@@ -319,9 +394,10 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async list(req: IListRequest): Promise<IListResponse> {
-		this._logger.debug("list", req);
+		this._logger.trace("list", req);
 
 		const list = await this._client.message<IVideoRoomResponse<IListResponse>>(this.handle, req);
+		this._logger.debug("list", list);
 		return list.plugindata.data;
 	}
 
@@ -342,9 +418,10 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async listparticipants(req: IListParticipantsRequest): Promise<IListParticipantsResponse> {
-		this._logger.debug("listparticipants", req);
+		this._logger.trace("listparticipants", req);
 
 		const list = await this._client.message<IVideoRoomResponse<IListParticipantsResponse>>(this.handle, req);
+		this._logger.debug("listparticipants", req, list);
 		return list.plugindata.data;
 	}
 
@@ -368,9 +445,10 @@ export class VideoRoomPlugin {
 	 * ```
 	 */
 	public async join_publisher(req: IJoinPublisherRequest): Promise<IJoinPublisherResponse> {
-		this._logger.debug("join/publisher", req);
+		this._logger.trace("join/publisher", req);
 
 		const publisher_result = await this._client.message<IVideoRoomResponse<IJoinPublisherResponse>>(this.handle, req);
+		this._logger.debug("join/publisher", req, publisher_result);
 		return publisher_result.plugindata.data;
 	}
 
@@ -390,9 +468,10 @@ export class VideoRoomPlugin {
 	 * @param jsep jsep offer
 	 */
 	public async publish(req: IPublishRequest, jsep?: any): Promise<IConfigured> {
-		this._logger.debug("publish", req);
+		this._logger.trace("publish", req);
 
 		const publish_result = await this._client.message<IVideoRoomResponse<IConfigured>>(this.handle, req, jsep);
+		this._logger.debug("publish", req, publish_result);
 		return publish_result.plugindata.data;
 	}
 	/**
@@ -402,11 +481,13 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async unpublish(): Promise<boolean> {
-		this._logger.debug("unpublish");
+		this._logger.trace("unpublish");
 
 		const unpublish_result = await this._client.message<IVideoRoomResponse<IUnpublishResponse>>(this.handle, {
 			request: "unpublish"
 		});
+
+		this._logger.debug("unpublish", unpublish_result);
 		return unpublish_result.plugindata.data.unpublished === "ok";
 	}
 
@@ -427,10 +508,13 @@ export class VideoRoomPlugin {
 	 * });
 	 * ```
 	 */
-	public async configure(req: IConfigureRequest): Promise<boolean> {
-		this._logger.debug("configure");
+	public async configure(req: IConfigureRequest, jsep?: RTCSessionDescriptionInit): Promise<boolean> {
+		this._logger.trace("configure", req, jsep);
 
-		const configure_result = await this._client.message<IVideoRoomResponse<IConfigured>>(this.handle, req);
+		const configure_result = await this._client.message<IVideoRoomResponse<IConfigured>>(this.handle, req, jsep);
+
+		this._logger.debug("configure", req, jsep, configure_result);
+
 		return configure_result.plugindata.data.configured === "ok";
 	}
 
@@ -443,6 +527,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public on_audiolevel_event(handler: (event: IEventData<IAudioLevelEvent>) => void) {
+		this._logger.trace("registering on_audiolevel_event", handler);
 		this._eventEmitter.on("audiolevel_event", handler);
 	}
 
@@ -458,9 +543,10 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async rtp_forward(req: IRTPForwardRequest): Promise<IRTPForwardResponse> {
-		this._logger.debug("rtp_forward");
+		this._logger.trace("rtp_forward",req);
 
 		const rtp_forward_result = await this._client.message<IVideoRoomResponse<IRTPForwardResponse>>(this.handle, req);
+		this._logger.debug("rtp_forward", req,rtp_forward_result);
 		return rtp_forward_result.plugindata.data;
 	}
 
@@ -472,9 +558,10 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async stop_rtp_forward(req: IStopRTPForwardRequest): Promise<IStopRTPForwardResponse> {
-		this._logger.debug("stop_rtp_forward");
+		this._logger.trace("stop_rtp_forward");
 
 		const stop_rtp_result = await this._client.message<IVideoRoomResponse<IStopRTPForwardResponse>>(this.handle, req);
+		this._logger.debug("stop_rtp_forward", req, stop_rtp_result);
 		return stop_rtp_result.plugindata.data;
 	}
 
@@ -487,9 +574,10 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async listforwarders(req: IListForwardersRequest): Promise<IListForwardersResponse> {
-		this._logger.debug("listforwarders");
+		this._logger.trace("listforwarders", req);
 
 		const listforwarders_result = await this._client.message<IVideoRoomResponse<IListForwardersResponse>>(this.handle, req);
+		this._logger.debug("listforwarders", req, listforwarders_result);
 		return listforwarders_result.plugindata.data;
 	}
 
@@ -500,7 +588,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async leave(): Promise<void> {
-		this._logger.debug("leave");
+		this._logger.trace("leave");
 
 		const req = {
 			request: "leave"
@@ -519,6 +607,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public on_leaving(handler: (event: IEventData<ILeavingEvent>) => void) {
+		this._logger.trace("registering leaving", handler);
 		this._eventEmitter.on("leaving", handler);
 	}
 
@@ -529,16 +618,17 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public on_unpublished(handler: (event: IEventData<IUnpublishedEvent>) => void) {
+		this._logger.trace("registering unpublished", handler);
 		this._eventEmitter.on("unpublished", handler);
 	}
 
 
-	public async join_subscriber(req: IJoinSubscriberRequest): Promise<void> {
-		this._logger.debug("join_subscriber");
+	public async join_subscriber(req: IJoinSubscriberRequest): Promise<IJoinSubscriberResponse> {
+		this._logger.trace("join_subscriber", req);
 
-		const join_subscriber_result = await this._client.message<IVideoRoomResponse<void>>(this.handle, req);
-		console.log(join_subscriber_result);
-		// return join_subscriber_result;
+		const join_subscriber_result = await this._client.message<IVideoRoomResponse<IJoinSubscriberResponse>>(this.handle, req);
+		this._logger.debug("join_subscriber",req, join_subscriber_result);
+		return join_subscriber_result.plugindata.data;
 	}
 
 	/**
@@ -548,6 +638,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public on_attached(handler: (event: IEventData<IAttachedEvent>) => void) {
+		this._logger.trace("registering attached", handler);
 		this._eventEmitter.on("attached", handler);
 	}
 
@@ -562,16 +653,30 @@ export class VideoRoomPlugin {
 	 * @returns {Promise<void>}
 	 * @memberof VideoRoomPlugin
 	 */
-	public async start<T>(jsep: T): Promise<void> {
-		this._logger.debug("start");
+	public async start<T>(jsep: T): Promise<boolean> {
+		this._logger.trace("start", jsep);
 
-		const req = {
+		const req :IStartRequest= {
 			request: "start"
 		};
 
-		const start_result = await this._client.message<IVideoRoomResponse<void>>(this.handle, req, jsep);
-		console.log(start_result);
-		// return start_result.plugindata.data;
+		const start_result = await this._client.message<IVideoRoomResponse<IStartResponse>>(this.handle, req, jsep);
+		this._logger.debug("start", jsep, start_result);
+		return start_result.plugindata.data.started === "ok";
+	}
+
+	/**
+	 * trickle candidates
+	 *
+	 * a message is related to a specific PeerConnection, it will need to be addressed to the right Handle
+	 *
+	 * @param {ITrickleRequest} req
+	 * @param {JanusSession} session
+	 * @returns
+	 */
+	public async trickle(req: ITrickleRequest) {
+		this._logger.trace("trickle", req);
+		return await this._client.trickle(req, this.handle);
 	}
 
 	/**
@@ -583,6 +688,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public on_started(handler: (event: IEventData<IStartedEvent>) => void) {
+		this._logger.trace("registering started", handler);
 		this._eventEmitter.on("started", handler);
 	}
 
@@ -595,7 +701,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async pause(): Promise<void> {
-		this._logger.debug("pause");
+		this._logger.trace("pause");
 
 		const req = {
 			request: "pause"
@@ -613,6 +719,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public on_paused(handler: (event: IEventData<IPausedEvent>) => void) {
+		this._logger.trace("registering paused", handler);
 		this._eventEmitter.on("paused", handler);
 	}
 
@@ -638,7 +745,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async switch(req: ISwitchRequest): Promise<void> {
-		this._logger.debug("switch");
+		this._logger.trace("switch",req);
 
 		const pause_result = await this._client.message<IVideoRoomResponse<void>>(this.handle, req);
 		console.log(pause_result);
@@ -652,6 +759,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public on_switched(handler: (event: IEventData<ISwitchedEvent>) => void) {
+		this._logger.trace("registering switched", handler);
 		this._eventEmitter.on("switched", handler);
 	}
 
@@ -662,6 +770,34 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public on_left(handler: (event: IEventData<ILeftEvent>) => void) {
+		this._logger.trace("registering left", handler);
 		this._eventEmitter.on("left", handler);
 	}
+
+	public on_joined(handler: (event: IEventData<IJoinedEvent>) => void) {
+		this._logger.trace("registering joined", handler);
+		this._eventEmitter.on("joined", handler);
+	}
+
+	public on_destroyed(handler: () => void) {
+		this._logger.trace("registering destroyed", handler);
+		this._eventEmitter.on("destroyed", handler);
+	}
+
+	public on_publishers(handler: (event: IEventData<IPublishersEvent>) => void) {
+		this._logger.trace("registering publishers", handler);
+		this._eventEmitter.on("publishers", handler);
+	}
+
+	public on_jsep(handler: (event: IEventData<IPublisher>) => void) {
+		this._logger.trace("registering jsep", handler);
+		this._eventEmitter.on("jsep", handler);
+	}
+
+	public on_temporal_substream(handler: (event: IEventData<ITemporalSubstreamEvent>) => void) {
+		this._logger.trace("registering temporal_substream", handler);
+		this._eventEmitter.on("temporal_substream", handler);
+	}
+
+
 }

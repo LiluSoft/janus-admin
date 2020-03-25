@@ -8,19 +8,22 @@ import { promises } from "fs";
 import { EventEmitter } from "events";
 import { MQTTEventClient } from "../events/MQTTEventClient";
 import { DeferredPromise } from "./DeferredPromise";
-import { Transaction, JanusError } from "../index_browser";
 import { IEventClient } from "../events/IEventClient";
 import { ILogger } from "../logger/ILogger";
 import { ILoggerFactory } from "../logger/ILoggerFactory";
 import { IEvent } from "./IEvent";
+import { JanusError } from "./JanusError";
+import { Transaction } from "../abstractions";
 
 
 export class EventClientTransport extends ITransport {
 	private _logger: ILogger;
 
-	public subscribe_plugin_events<T>(session: JanusSession, callback: (event: IEvent) => void): void {
+	public subscribe_plugin_events<T>(callback: (event: IEvent) => void, session?: JanusSession): ()=>void{
 		throw new Error("Method not implemented.");
 	}
+
+
 
 
 	private _ready = false;
