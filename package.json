@@ -64,11 +64,8 @@
     "doc-markdown": "rimraf ./docs/html && typedoc --tsconfig tsconfig.json --theme markdown",
     "coverage": "rimraf ./coverage && nyc mocha -r ts-node/register -r source-map-support/register --ui bdd tests/**/*.spec.ts",
     "publish-now": "npm publish --access public",
-    "examples-videoroom": "gulp --gulpfile examples/videoroom-gulpfile.js",
-    "examples-poc": "gulp --gulpfile examples/poc-gulpfile.js",
-    "serve-examples": "http-server examples/",
     "prepare-examples": "ts-node examples/prepare_token | bunyan",
-    "xxx": "webpack-dev-server --mode development  --config examples/poc.webpack.config.js"
+    "start-videoroom": "webpack-dev-server --mode development  --config examples/videoroom.webpack.config.js"
   },
   "author": "Dror Gluska <drorgl@yahoo.com>",
   "license": "AGPL-3.0"

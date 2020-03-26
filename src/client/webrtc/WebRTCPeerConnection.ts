@@ -4,6 +4,7 @@ import adapter from "webrtc-adapter";
 import { EventEmitter } from "events";
 import { WebRTCDataChannel } from "./WebRTCDataChannel";
 import { WebRTCMediaStream } from "./WebRTCMediaStream";
+import { WebRTCDTMFSender } from "./WebRTCDTMFSender";
 
 export enum WebRTCPeerOptions {
 	None = 0,
@@ -15,6 +16,9 @@ export enum WebRTCPeerOptions {
 	VideoReceive = 1 << 5
 }
 
+/**
+ * WebRTC Peer Connection
+ */
 export class WebRTCPeerConnection {
 	private _logger: ILogger;
 
@@ -31,6 +35,8 @@ export class WebRTCPeerConnection {
 	private _eventEmitter = new EventEmitter();
 	private candidates: ((RTCIceCandidateInit | RTCIceCandidate) & { completed: boolean })[];
 	private remoteSdp: RTCSessionDescriptionInit;
+
+	private dtmfSender : WebRTCDTMFSender;
 
 	private bitrate: Partial<{
 		value: string;
@@ -216,7 +222,7 @@ export class WebRTCPeerConnection {
 							inStats = true;
 						} else if (res.type === "ssrc" && res.bytesReceived &&
 							(res.googCodecName === "VP8" || res.googCodecName === "")) {
-							// Older Chromer versions
+							// Older Chrome versions
 							inStats = true;
 						}
 						// Parse stats now
@@ -250,6 +256,7 @@ export class WebRTCPeerConnection {
 		}
 	}
 
+	// TODO: multiple data channels can be used
 	public getDataChannel() {
 		if (!this._dataChannel) {
 			this._dataChannel = new WebRTCDataChannel(this.loggerFactory, this.peerConnection);
@@ -263,6 +270,17 @@ export class WebRTCPeerConnection {
 
 	private isAudioRecvEnabled(answerRequirements: WebRTCPeerOptions): boolean {
 		return (answerRequirements & WebRTCPeerOptions.AudioReceive) === WebRTCPeerOptions.AudioReceive;
+	}
+
+	public getSenders() : RTCRtpSender[]{
+		return  this.peerConnection.getSenders();
+	}
+
+	public getDTMFSender(){
+		if (!this.dtmfSender){
+			this.dtmfSender = new WebRTCDTMFSender(this.loggerFactory,this);
+		}
+		return this.dtmfSender;
 	}
 
 	public async createAnswer(answerRequirements: WebRTCPeerOptions) {

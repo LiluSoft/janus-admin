@@ -2,6 +2,9 @@ import { WebRTCMediaStream } from "./WebRTCMediaStream";
 import { ILoggerFactory } from "../../logger/ILoggerFactory";
 import { ILogger } from "../../logger/ILogger";
 
+/**
+ * Media Source for video/audio, such as webcam, microphone and screen capture
+ */
 export class WebRTCMediaSource {
 	private _logger: ILogger;
 	constructor(public readonly loggerFactory: ILoggerFactory) {

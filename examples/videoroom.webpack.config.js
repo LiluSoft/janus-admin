@@ -1,12 +1,12 @@
 const path = require('path');
 
 module.exports = {
-    entry: path.join(__dirname, '/poc.ts'),
+    entry: path.join(__dirname, '/videoroom.ts'),
     //devtool: 'inline-source-map',
     output: {
-        filename: 'poc.js',
+        filename: 'videoroom.js',
         path: path.join(__dirname, "js/"),
-        sourceMapFilename: 'poc.js.map',
+        sourceMapFilename: 'videoroom.js.map',
         devtoolLineToLine: true,
         publicPath: path.join(__dirname),
     },

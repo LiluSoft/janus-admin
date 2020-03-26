@@ -2,6 +2,9 @@ import { WebRTCMediaStream } from "./WebRTCMediaStream";
 import { ILoggerFactory } from "../../logger/ILoggerFactory";
 import { ILogger } from "../../logger/ILogger";
 
+/**
+ * Attaches a MediaStream to HTML Video Element
+ */
 export class WebRTCMediaTarget {
 	private _logger: ILogger;
 
@@ -14,8 +17,11 @@ export class WebRTCMediaTarget {
 			this.stream = new WebRTCMediaStream(this.loggerFactory, new MediaStream());
 		}
 	}
-	// to canvas
-	// to speakers
+
+	/**
+	 * Attach Stream to HTMLVideoElement
+	 * @param videoElement
+	 */
 	public attachToHTMLVideoElement(videoElement: HTMLVideoElement) {
 		this._logger.debug("Attaching", this.stream,"to", videoElement);
 		setTimeout(() => {
