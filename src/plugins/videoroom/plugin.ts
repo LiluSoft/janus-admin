@@ -205,9 +205,20 @@ export class VideoRoomPlugin {
 			this._unregister_callback();
 			this._unregister_callback = undefined;
 		}
-		const destroyedHandle = await this._client.DetachHandle(this.handle);
-		const destroyedSession = await this._client.DestroySession(this.session);
-		this._logger.debug("destroyed", destroyedHandle, destroyedSession);
+		try {
+			const destroyedHandle = await this._client.DetachHandle(this.handle);
+			this._logger.trace("Successfully destroyed handle", destroyedHandle);
+		} catch (e) {
+			this._logger.trace("Unable to destroy handle", this.handle, e);
+		}
+
+		try {
+			const destroyedSession = await this._client.DestroySession(this.session);
+			this._logger.trace("Successfully destroyed session", destroyedSession);
+		} catch (e) {
+			this._logger.trace("Unable to destroy session", this.session, e);
+		}
+
 	}
 
 	/**
@@ -241,7 +252,7 @@ export class VideoRoomPlugin {
 		this._logger.trace("create", req);
 
 		const created_result = await this._client.message<IVideoRoomResponse<ICreatedResponse>>(this.handle, req);
-		this._logger.debug("created",req, created_result);
+		this._logger.debug("created", req, created_result);
 		return created_result.plugindata.data;
 	}
 
@@ -543,10 +554,10 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async rtp_forward(req: IRTPForwardRequest): Promise<IRTPForwardResponse> {
-		this._logger.trace("rtp_forward",req);
+		this._logger.trace("rtp_forward", req);
 
 		const rtp_forward_result = await this._client.message<IVideoRoomResponse<IRTPForwardResponse>>(this.handle, req);
-		this._logger.debug("rtp_forward", req,rtp_forward_result);
+		this._logger.debug("rtp_forward", req, rtp_forward_result);
 		return rtp_forward_result.plugindata.data;
 	}
 
@@ -627,7 +638,7 @@ export class VideoRoomPlugin {
 		this._logger.trace("join_subscriber", req);
 
 		const join_subscriber_result = await this._client.message<IVideoRoomResponse<IJoinSubscriberResponse>>(this.handle, req);
-		this._logger.debug("join_subscriber",req, join_subscriber_result);
+		this._logger.debug("join_subscriber", req, join_subscriber_result);
 		return join_subscriber_result.plugindata.data;
 	}
 
@@ -656,7 +667,7 @@ export class VideoRoomPlugin {
 	public async start<T>(jsep: T): Promise<boolean> {
 		this._logger.trace("start", jsep);
 
-		const req :IStartRequest= {
+		const req: IStartRequest = {
 			request: "start"
 		};
 
@@ -745,7 +756,7 @@ export class VideoRoomPlugin {
 	 * @memberof VideoRoomPlugin
 	 */
 	public async switch(req: ISwitchRequest): Promise<void> {
-		this._logger.trace("switch",req);
+		this._logger.trace("switch", req);
 
 		const pause_result = await this._client.message<IVideoRoomResponse<void>>(this.handle, req);
 		console.log(pause_result);

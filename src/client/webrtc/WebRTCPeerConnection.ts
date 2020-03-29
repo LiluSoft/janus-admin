@@ -876,4 +876,14 @@ export class WebRTCPeerConnection {
 	public on_remotestreams(handler: (streams: WebRTCMediaStream[]) => void) {
 		this._eventEmitter.on("remotestreams", handler);
 	}
+
+	public dispose(){
+		this._logger.debug("Disposing");
+		this.peerConnection.close();
+
+		this._eventEmitter.removeAllListeners();
+		if (this.bitrate.timer){
+			clearInterval(this.bitrate.timer as number);
+		}
+	}
 }

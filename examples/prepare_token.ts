@@ -2,7 +2,7 @@ import { ServerLoggerFactory, WebSocketTransport, JanusAdmin } from "../src/inde
 
 
 (async () => {
-	const loggerFactory = new ServerLoggerFactory("debug");
+	const loggerFactory = new ServerLoggerFactory("info");
 
 	const adminTransport = new WebSocketTransport(loggerFactory, "ws://192.168.99.100:7188", "janus-admin-protocol");
 	await adminTransport.waitForReady();

@@ -73,4 +73,5 @@ export class WebRTCMediaStream {
 	// public applyConstraints(){
 	// 	this.mediaStream.getTracks()[0].applyConstraints({})
 	// }
+
 }

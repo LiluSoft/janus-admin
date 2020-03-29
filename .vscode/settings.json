@@ -190,6 +190,7 @@
         "recvonly",
         "refcount",
         "registernow",
+        "remotefeed",
         "remotestreams",
         "remotevideo",
         "resetdecoder",

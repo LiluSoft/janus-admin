@@ -26,7 +26,7 @@ export class WebRTCDTMFSender {
 			if (this.peerConnection !== undefined && this.peerConnection !== null) {
 				const senders = this.peerConnection.getSenders();
 				const audioSender = senders.find((sender) => {
-					return sender.track && sender.track.kind === "audio";
+					return (sender.track && sender.track.kind === "audio") ? true : false;
 				});
 				if (!audioSender) {
 					this._logger.warn("Invalid DTMF configuration (no audio track)");

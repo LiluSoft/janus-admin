@@ -91,12 +91,12 @@ export class JanusSessionEventHandler {
 		}
 	}
 
-	public destroy() {
-		this._logger.trace("Destroying");
+	public dispose() {
+		this._logger.trace("Disposing");
 		if (this._unregister_callback) {
 			this._unregister_callback();
 			this._unregister_callback = undefined;
-			this._logger.debug("Destroyed");
+			this._logger.debug("Disposed");
 		}
 	}
 
