@@ -3,7 +3,7 @@ import { ILogger } from "./ILogger";
 import { BunyanLogger } from "./BunyanLogger";
 
 export class ServerLoggerFactory implements ILoggerFactory {
-	constructor(public defaultLevel:"trace" | "debug" | "info" | "warn" | "error" | "fatal" ){
+	constructor(public defaultLevel:"trace" | "debug" | "info" | "warn" | "error" | "fatal" = "info" ){
 
 	}
 

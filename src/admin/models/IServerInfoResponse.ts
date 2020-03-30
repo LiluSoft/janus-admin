@@ -12,6 +12,14 @@ export interface IServerInfoResponse {
 	"plugins": {
 		[plugin_id: string]: IServerInfoPlugin;
 	};
+	"events":{
+		[event_id:string]: {
+			name:string;
+			author:string;
+			description:string;
+			version_string:string;
+		}
+	};
 	"commit-hash": string;
 	"compile-time": string;
 	"log-to-stdout": boolean;

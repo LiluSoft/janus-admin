@@ -29,7 +29,8 @@
     },
     "include": [
         "src/**/*",
-        "test/**/*"
+        "test/**/*",
+        "examples/**/*"
     ],
     "files": [
         "node_modules/@types/jquery.blockui/index.d.ts"
