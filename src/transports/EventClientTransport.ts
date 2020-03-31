@@ -20,7 +20,10 @@ export class EventClientTransport extends ITransport {
 	private _logger: ILogger;
 
 	public subscribe_plugin_events<T>(callback: (event: IEvent) => void, session?: JanusSession): ()=>void{
-		throw new Error("Method not implemented.");
+		this.globalEmitter.on("event", callback);
+		return ()=>{
+			this.globalEmitter.removeListener("event", callback);
+		};
 	}
 
 
@@ -84,8 +87,13 @@ export class EventClientTransport extends ITransport {
 			deferredPromise.reject(new JanusError(data.error.code, data.error.reason, deferredPromise.stack));
 			return;
 		} else if (data.janus === "ack") {
-			this._logger.debug("ack received, waiting for async response", data);
-			return;
+			if (deferredPromise && deferredPromise.ignore_ack) {
+				this._logger.debug("ack received, waiting for async response", data);
+				return;
+			} else {
+				this._logger.debug("ack relayed", data);
+				deferredPromise.resolve(data);
+			}
 		} else if (data.janus === "timeout") {
 			this._logger.error("timeout", data);
 		} else {
@@ -117,8 +125,16 @@ export class EventClientTransport extends ITransport {
 			req.handle_id = pluginHandle.handle_id;
 		}
 
+
+
 		const deferredPromise = await DeferredPromise.create<ResponseT>(transaction);
 		deferredPromise.transaction = transaction;
+
+		switch (req.janus) {
+			case "keepalive":
+				deferredPromise.ignore_ack = false;
+				break;
+		}
 
 		this._transactions[transaction.getTransactionId()] = deferredPromise;
 

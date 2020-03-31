@@ -14,7 +14,7 @@ import { ILoggerFactory, ILogger } from "../logger/index_server";
  * @implements {IEventClient}
  */
 export class AMQPEventClient implements IEventClient {
-	private _logger :ILogger;
+	private _logger: ILogger;
 	private _eventEmitter = new EventEmitter();
 
 	private _readyPromise: Promise<boolean>;
@@ -152,7 +152,11 @@ export class AMQPEventClient implements IEventClient {
 	 */
 	public async dispose(): Promise<void> {
 		this._logger.debug("disposing");
-		await this._client.close();
+		try {
+			await this._client.close();
+		} catch (e) {
+			this._logger.error("Error Closing AMQP Connection", e);
+		}
 		return Promise.resolve();
 	}
 }

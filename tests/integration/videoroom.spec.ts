@@ -1,6 +1,6 @@
 import { WebSocketTransport } from "../../src/transports/WebSocketTransport";
 import { VideoRoomPlugin } from "../../src/plugins/videoroom/plugin";
-import { ITransport, JanusAdmin, Transaction, ServerLoggerFactory } from "../../src/index_server";
+import { ITransport, JanusAdmin, Transaction, ServerLoggerFactory, EventClientTransport, MQTTEventClient, AMQPEventClient, HTTPTransport } from "../../src/index_server";
 import { expect } from "chai";
 import "mocha";
 import { client } from "websocket";
@@ -12,7 +12,41 @@ chai.use(chaiSubset);
 
 const loggerFactory = new ServerLoggerFactory();
 
-describe("videoroom", () => {
+
+const transports:
+	{
+		name: string;
+		transport: () => ITransport;
+	}[]
+	= [
+		{
+			name: "WebSocket",
+			transport: () => {
+				return new WebSocketTransport(loggerFactory, "ws://192.168.99.100:8188", "janus-protocol");
+			}
+		},
+		{
+			name: "MQTT",
+			transport: () => {
+				return new EventClientTransport(loggerFactory,new MQTTEventClient(loggerFactory,"tcp://192.168.99.100:1883", { username: "guest", password: "guest" }), "from-janus/#", "to-janus", false);
+			}
+		},
+		{
+			name: "RabbitMQ",
+			transport: () => {
+				return new EventClientTransport(loggerFactory,new AMQPEventClient(loggerFactory,{ hostname: "192.168.99.100", username: "guest", password: "guest" }, { noDelay: true }), "from-janus", "to-janus", false);
+			}
+		},
+		{
+			name: "HTTP",
+			transport: () => {
+				return new HTTPTransport(loggerFactory,"http://192.168.99.100:8088/janus", "janusoverlord", false);
+			}
+		}
+	];
+
+for (const transport of transports) {
+describe(`videoroom with transport ${transport.name}`, () => {
 	let adminTransport: ITransport;
 	let clientToken: string;
 	let clientTransport: ITransport;
@@ -27,7 +61,7 @@ describe("videoroom", () => {
 
 		await admin.add_token(clientToken);
 
-		clientTransport = new WebSocketTransport(loggerFactory,"ws://192.168.99.100:8188", "janus-protocol");
+		clientTransport =  transport.transport();
 		expect(await clientTransport.waitForReady()).to.be.true;
 	});
 	afterEach(async () => {
@@ -468,3 +502,4 @@ describe("videoroom", () => {
 
 // 	clientTransport.dispose();
 // })();
+}

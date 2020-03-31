@@ -32,7 +32,7 @@ export class HTTPTransport extends ITransport {
 	// for each session, keep a long poll, for each event, pass on to "event"
 	private _sessionTimers: { [session_id: number]: NodeJS.Timeout } = {};
 
-	private _sessionTrackingStatistics: {[session_id:number]: {number_of_errors: number}} = {};
+	private _sessionTrackingStatistics: { [session_id: number]: { number_of_errors: number } } = {};
 
 	private _transactions: { [transaction_id: string]: DeferredPromise<unknown> } = {};
 
@@ -63,14 +63,14 @@ export class HTTPTransport extends ITransport {
 			} catch (error) {
 				this._logger.error("Unable to Track Session", session, error);
 
-				if (!this._sessionTrackingStatistics[session.session_id]){
-					this._sessionTrackingStatistics[session.session_id] = {number_of_errors: 0};
+				if (!this._sessionTrackingStatistics[session.session_id]) {
+					this._sessionTrackingStatistics[session.session_id] = { number_of_errors: 0 };
 				}
 
 				this._sessionTrackingStatistics[session.session_id].number_of_errors++;
 
-				if (this._sessionTrackingStatistics[session.session_id].number_of_errors > 3){
-					this._logger.fatal("Unable to Track Session too many times, stopping to track",session);
+				if (this._sessionTrackingStatistics[session.session_id].number_of_errors > 3) {
+					this._logger.fatal("Unable to Track Session too many times, stopping to track", session);
 					return;
 				}
 				// todo: add event for handling errors
@@ -84,6 +84,7 @@ export class HTTPTransport extends ITransport {
 	private _longPollHandler<T>(data: IEventData<T>) {
 		this._logger.trace("long poll data", data);
 
+
 		// handle deferred transactions
 		if (data.transaction) {
 			const deferredPromise = this._transactions[data.transaction];
@@ -91,6 +92,9 @@ export class HTTPTransport extends ITransport {
 				// unknown transaction, dispose
 				this._logger.warn("unknown transaction", data.transaction);
 			} else {
+
+
+
 				this._logger.trace("resolving transaction", data.transaction);
 				deferredPromise.resolve(data);
 			}
@@ -150,9 +154,10 @@ export class HTTPTransport extends ITransport {
 
 		try {
 			const body = await (await superagent.post(this.url).send(req)).body;
-			if (body.janus === "ack") {
+			if (body.janus === "ack" && req.janus !== "keepalive") {
 				const deferredPromise = await DeferredPromise.create<ResponseT>(transaction);
 				deferredPromise.transaction = transaction;
+
 
 				this._transactions[transaction.getTransactionId()] = deferredPromise;
 

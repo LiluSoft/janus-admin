@@ -1,5 +1,5 @@
 export interface IEvent {
-	"janus": "event" | "keepalive" | "trickle" | "webrtcup" | "hangup" | "detached" | "media" | "slowlink" | "timeout";
+	"janus": "event" | "keepalive" | "trickle" | "webrtcup" | "hangup" | "detached" | "media" | "slowlink" | "timeout" | "ack";
 	/**
 	 * the handle identifier
 	 */
